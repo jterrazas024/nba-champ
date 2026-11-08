@@ -41,32 +41,7 @@ class OfflineClient:
         return page.read_text(encoding="utf-8", errors="replace")
 
 
-def fill_schedule(known: pd.DataFrame, need: pd.Series, rng: np.random.Generator) -> pd.DataFrame:
-    """Return `known` (home_id, away_id) plus made-up games so every team has `need[team]` more games in total.
-
-    The made-up games pair random teams (no team plays itself; home and away are a coin flip). It
-    stands in for months of the schedule we do not have cached, so opponents are an average draw
-    and home/away is not balanced per team.
-    """
-    have = pd.concat([known["home_id"], known["away_id"]]).value_counts().reindex(need.index).fillna(0)
-    extra = (need - have).astype(int)
-    if (extra < 0).any() or extra.sum() % 2:
-        raise ValueError("the known games already exceed a team's games left, or the leftover total is odd")
-    stubs = np.repeat(np.array(extra.index), extra.to_numpy())
-    rng.shuffle(stubs)
-    for _ in range(10_000):                                  # repair pairs where a team meets itself
-        pairs = stubs.reshape(-1, 2)
-        clash = np.where(pairs[:, 0] == pairs[:, 1])[0]
-        if not len(clash):
-            break
-        for i in clash:
-            j = int(rng.integers(len(stubs)))
-            stubs[2 * i], stubs[j] = stubs[j], stubs[2 * i]
-    pairs = stubs.reshape(-1, 2)
-    flip = rng.random(len(pairs)) < 0.5
-    made_up = pd.DataFrame({"home_id": np.where(flip, pairs[:, 0], pairs[:, 1]),
-                            "away_id": np.where(flip, pairs[:, 1], pairs[:, 0])})
-    return pd.concat([known[["home_id", "away_id"]], made_up], ignore_index=True)
+fill_schedule = sim_inputs.fill_schedule      # moved to pipeline/sim_inputs.py (the daily build uses it too)
 
 
 def todays_league_inputs(day: date, day_dir: Path, seed: int = 0):

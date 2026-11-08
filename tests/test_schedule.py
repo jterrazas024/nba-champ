@@ -87,3 +87,46 @@ def test_unplayed_regular_games_drops_played_games_and_the_cup_final():
     ])
     games = unplayed_regular_games([page])
     assert len(games) == 2 and set(games["home_id"]) == {"ATL"}
+
+
+def _ids():
+    from pipeline import config
+    return [t.id for t in config.TEAMS]
+
+
+def _full_schedule(left: int):
+    """A schedule where every team has `left` games: `left` rounds of 15 games (everyone plays once a round)."""
+    import pandas as pd
+    ids = _ids()
+    rows = []
+    for k in range(left):
+        rotated = ids[k % 30:] + ids[:k % 30]
+        rows += [(rotated[j], rotated[29 - j]) for j in range(15)]
+    return pd.DataFrame(rows, columns=["home_id", "away_id"])
+
+
+def test_complete_remaining_fills_a_few_missing_games_and_is_deterministic():
+    import numpy as np
+    import pandas as pd
+    from pipeline.sim_inputs import complete_remaining
+    played = pd.Series(70, index=_ids())                               # 12 games left each
+    short = _full_schedule(12).iloc[5:]                                # 5 games missing from the pages
+    a = complete_remaining(short, played, np.random.default_rng(1))
+    b = complete_remaining(short, played, np.random.default_rng(1))
+    assert a.equals(b)
+    per_team = pd.concat([a["home_id"], a["away_id"]]).value_counts().reindex(_ids())
+    assert (per_team == 12).all()
+
+
+def test_complete_remaining_rejects_big_gaps_and_double_counted_pages():
+    import numpy as np
+    import pandas as pd
+    import pytest
+    from pipeline.sim_inputs import complete_remaining
+    played = pd.Series(70, index=_ids())
+    with pytest.raises(ValueError, match="remaining schedule"):
+        complete_remaining(_full_schedule(7), played, np.random.default_rng(1))      # a month missing: 5 games short
+    with pytest.raises(ValueError, match="remaining schedule"):
+        complete_remaining(_full_schedule(14), played, np.random.default_rng(1))     # a page counted twice: 2 over
+    ok = complete_remaining(_full_schedule(13), played, np.random.default_rng(1))    # one over (the Cup final): left alone
+    assert len(ok) == len(_full_schedule(13))

@@ -522,3 +522,10 @@ def test_run_writes_a_file_with_sim_fields_and_main_message_mentions_it(tmp_path
     result = run(FakeClient(league_pages()), TODAY, out)
     assert "sim" in json.loads(out.read_text()) and "with simulation" in result.message
 
+
+
+def test_a_schedule_a_few_games_short_is_filled_and_the_simulation_still_runs(monkeypatch, capsys):
+    real = build_odds.sim_inputs.fetch_remaining_schedule
+    monkeypatch.setattr(build_odds.sim_inputs, "fetch_remaining_schedule", lambda *a, **k: real(*a, **k).iloc[:-30])  # 2 days short
+    odds = _odds_for(TODAY)
+    assert "sim" in odds and validate_odds(odds) == [] and not _warns(capsys)

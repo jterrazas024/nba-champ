@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 # Allow running as a plain script (python pipeline/build_odds.py) as well as a module.
@@ -190,11 +191,11 @@ def _run_simulation(client: BRClient, today: date, end_year: int, ratings: pd.Da
     """
     month_index = MONTH_INDEX.get(today.month, DEFAULT_MONTH_INDEX)
     remaining = sim_inputs.fetch_remaining_schedule(client, end_year, month_index)
-    sim_inputs.check_remaining(remaining, games_played)
+    seed = daily_seed(today, config.season_label(end_year), MODEL_VERSION)
+    remaining = sim_inputs.complete_remaining(remaining, games_played, np.random.default_rng(seed))
     by_team = ratings.set_index("team_id")
     league = sim.league_from_frames(composite * config.MARGIN_PER_Z, games_played, by_team["w"].astype(float),
                                     {t.id: t.conference for t in config.TEAMS}, remaining)
-    seed = daily_seed(today, config.season_label(end_year), MODEL_VERSION)
     result = sim.simulate(league, runs=config.SIM_RUNS, seed=seed, fmt="playin")
     title = result.title_probs()
     per_team = {}
