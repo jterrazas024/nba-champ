@@ -2,7 +2,7 @@
 
 A live odds board showing each NBA team's estimated probability of winning the 2026-27 championship. A Python pipeline computes the odds from public NBA stats and writes `data/odds.json`; a static site on GitHub Pages renders it, and a scheduled GitHub Action refreshes the data daily.
 
-Model estimates for information only. Not betting advice.
+Model estimates only; not betting advice. This is a not-for-profit personal experiment with no ads or sales.
 
 See `SPEC.md` for the full specification and `docs/research-plan.md` for the research behind the model.
 
