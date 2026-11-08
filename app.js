@@ -106,6 +106,7 @@ const state = {
   view: "chart",        // "chart" or "table"
   selectedId: null,     // team highlighted everywhere; null = none
   chartWidth: 0,
+  active: new Set(),    // model inputs that at least one team has a value for
 };
 
 // ---------- Small DOM helpers ----------
@@ -119,9 +120,18 @@ function el(tag, className, text) {
 
 const teamById = (id) => state.teams.find((t) => t.id === id) || null;
 const currentTab = () => TABS.find((t) => t.id === state.tabId);
+
+// An input nobody has data for (the model can drop an input, e.g. clutch) is hidden everywhere
+// instead of showing an empty chart. Title probability is always available.
+const isActive = (metricKey) => metricKey === "title_prob" || state.active.has(metricKey);
+const activeMetrics = (tab) => tab.metrics.filter(isActive);
+const visibleTabs = () => TABS.filter((tab) =>
+  tab.kind === "scatter" ? isActive("net_rating") && isActive("star_power") : activeMetrics(tab).length > 0);
+
 const currentMetricKey = () => {
   const tab = currentTab();
-  return state.metricByTab[tab.id] || tab.metrics[0];
+  const metrics = activeMetrics(tab);
+  return metrics.includes(state.metricByTab[tab.id]) ? state.metricByTab[tab.id] : metrics[0];
 };
 
 function weightPercent(key) {
@@ -196,17 +206,18 @@ function renderKpis() {
 
 function renderTabs() {
   const bar = document.getElementById("tabs");
-  TABS.forEach((tab) => {
+  visibleTabs().forEach((tab) => {
     const button = el("button", "tab", tab.label);
     button.type = "button";
     button.id = "tab-" + tab.id;
     button.setAttribute("role", "tab");
     button.addEventListener("click", () => selectTab(tab.id));
     button.addEventListener("keydown", (e) => {
-      const index = TABS.findIndex((t) => t.id === state.tabId);
+      const tabs = visibleTabs();
+      const index = tabs.findIndex((t) => t.id === state.tabId);
       let next = null;
-      if (e.key === "ArrowRight") next = TABS[(index + 1) % TABS.length];
-      if (e.key === "ArrowLeft") next = TABS[(index - 1 + TABS.length) % TABS.length];
+      if (e.key === "ArrowRight") next = tabs[(index + 1) % tabs.length];
+      if (e.key === "ArrowLeft") next = tabs[(index - 1 + tabs.length) % tabs.length];
       if (next) {
         e.preventDefault();
         selectTab(next.id);
@@ -218,7 +229,7 @@ function renderTabs() {
 }
 
 function updateTabs() {
-  TABS.forEach((tab) => {
+  visibleTabs().forEach((tab) => {
     const button = document.getElementById("tab-" + tab.id);
     const active = tab.id === state.tabId;
     button.classList.toggle("active", active);
@@ -264,7 +275,7 @@ function renderChartCard() {
 
   renderSegmented(
     document.getElementById("metric-switch"),
-    tab.metrics.map((k) => ({ id: k, label: METRICS[k].label })),
+    activeMetrics(tab).map((k) => ({ id: k, label: METRICS[k].label })),
     tab.kind === "bar" ? currentMetricKey() : null,
     (k) => { state.metricByTab[tab.id] = k; renderChartCard(); },
   );
@@ -299,6 +310,12 @@ function tooltipForBar(metricKey) {
   };
 }
 
+// Shown instead of a chart when there is nothing to draw.
+function showNoData(body) {
+  body.textContent = "";
+  body.appendChild(el("p", "message", "No data for this view yet."));
+}
+
 function renderChartBody() {
   const body = document.getElementById("chart-body");
   const tab = currentTab();
@@ -312,6 +329,7 @@ function renderChartBody() {
     const points = state.teams
       .map((t) => ({ id: t.id, name: t.name, x: inputValue("net_rating")(t), y: inputValue("star_power")(t), size: t.title_prob, team: t }))
       .filter((p) => p.x !== null && p.y !== null);
+    if (points.length === 0) return showNoData(body);
     Charts.drawScatter(body, {
       points,
       xLabel: "Net rating", yLabel: "Star power",
@@ -330,8 +348,10 @@ function renderChartBody() {
   }
   const key = currentMetricKey();
   const metric = METRICS[key];
+  const rows = barRows(key);
+  if (rows.length === 0) return showNoData(body);
   Charts.drawBarChart(body, {
-    rows: barRows(key),
+    rows,
     format: metric.fmt,
     tickFormat: metric.tick,
     selectedId: state.selectedId,
@@ -432,7 +452,7 @@ function renderDetail() {
 
   box.appendChild(el("h3", "detail-heading", "What drives it"));
   const list = el("ul", "inputs");
-  INPUT_ORDER.forEach((key) => {
+  INPUT_ORDER.filter(isActive).forEach((key) => {
     const input = team.inputs && team.inputs[key];
     const metric = METRICS[key];
     const item = el("li", "input-row");
@@ -491,7 +511,9 @@ function watchChartWidth() {
 function render(data) {
   state.data = data;
   state.teams = data.teams.slice().sort((a, b) => b.title_prob - a.title_prob);
-  const fromHash = TABS.find((t) => "#" + t.id === location.hash);
+  state.active = new Set(INPUT_ORDER.filter((key) =>
+    state.teams.some((t) => typeof (t.inputs && t.inputs[key] && t.inputs[key].value) === "number")));
+  const fromHash = visibleTabs().find((t) => "#" + t.id === location.hash);
   if (fromHash) state.tabId = fromHash.id;
 
   renderHeader(data);
