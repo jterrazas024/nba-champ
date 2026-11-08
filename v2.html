@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Who wins the 2026-27 NBA title?</title>
+  <meta name="description" content="Model-based probability of each NBA team winning the 2026-27 championship.">
+  <meta name="theme-color" content="#FFA800">
+  <script>
+    // Set the theme before first paint so the page never flashes the wrong colors.
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem("champ-theme"); } catch (e) {}
+      var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = saved || (dark ? "black" : "amber");
+    })();
+  </script>
+  <link rel="preload" href="fonts/Anton-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="v2.css">
+</head>
+<body>
+  <!-- Shared grain filter: speckles the edges of the black shapes so they read as printed, not flat. -->
+  <svg class="defs" aria-hidden="true" width="0" height="0" focusable="false">
+    <defs>
+      <filter id="speck" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="noise"/>
+        <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  12 0 0 0 -2.7" result="mask"/>
+        <feComposite in="SourceGraphic" in2="mask" operator="in"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <div class="stage">
+    <div class="app" id="app">
+      <header class="top">
+        <span class="top-side" aria-hidden="true"></span>
+        <div class="loc">
+          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 11 21 3l-8 18-2-8z" fill="currentColor"/></svg>
+          <span id="season-label">NBA champion</span>
+        </div>
+        <button class="top-side icon-btn" id="theme-toggle" type="button" aria-label="Switch between amber and black">
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path d="M3 8h11M20 8h1M3 16h1M10 16h11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+            <circle cx="17" cy="8" r="3" fill="currentColor"/><circle cx="7" cy="16" r="3" fill="currentColor"/>
+          </svg>
+        </button>
+      </header>
+
+      <div class="status" id="status" aria-live="polite">
+        <span class="chip" id="sample-badge" hidden>Sample data</span>
+        <span class="chip" id="stale-notice" hidden>Data may be stale: last updated over 48 hours ago</span>
+      </div>
+
+      <p class="message" id="loading">Loading odds…</p>
+      <p class="message message-error" id="error" role="alert" hidden></p>
+
+      <main class="track" id="track" hidden>
+
+        <!-- 1. Home: the favorite, as one giant number -->
+        <section class="page" id="page-home" data-title="Home" aria-label="Home">
+          <div class="art art-home" id="home-art"></div>
+          <div class="big" id="home-big"></div>
+          <div class="caption">
+            <h1 class="cap-name" id="home-name"></h1>
+            <p class="cap-sub" id="home-sub"></p>
+          </div>
+          <div class="strip" id="home-strip" role="group" aria-label="Top eight title contenders"></div>
+        </section>
+
+        <!-- 2. Rankings: bubbles sized by odds, then every team as a row -->
+        <section class="page" id="page-rankings" data-title="Rankings" aria-label="Rankings">
+          <div class="art art-bubbles" id="bubbles"></div>
+          <h2 class="page-title">Rankings</h2>
+          <div class="rows rows-scroll" id="rank-list" role="group" aria-label="All teams by title odds"></div>
+        </section>
+
+        <!-- 3. Team: one team's odds and model inputs -->
+        <section class="page" id="page-team" data-title="Team" aria-label="Team">
+          <div class="team-head">
+            <div class="art art-crest" id="team-crest"></div>
+            <div class="big big-sm" id="team-big"></div>
+          </div>
+          <h2 class="page-title" id="team-name"></h2>
+          <p class="page-sub" id="team-sub"></p>
+          <div class="rows" id="team-rows" role="group" aria-label="Team measures"></div>
+          <p class="notes" id="team-notes"></p>
+          <div class="league" id="league"></div>
+          <div class="trend" id="trend"></div>
+        </section>
+
+        <!-- 4. Map: net rating against star power -->
+        <section class="page" id="page-map" data-title="Map" aria-label="Contenders map">
+          <h2 class="page-title">Contenders</h2>
+          <p class="page-sub">Net rating against star power. Dot size is title odds. Upper right is strong on both.</p>
+          <div class="map" id="map"></div>
+          <div class="rows" id="map-readout"></div>
+          <table class="sr-only" id="map-table"></table>
+        </section>
+
+        <!-- 5. Model: how the number is made -->
+        <section class="page" id="page-model" data-title="Model" aria-label="The model">
+          <div class="art art-slabs" id="slabs"></div>
+          <h2 class="page-title">The model</h2>
+          <p class="page-sub">Each team gets a score from the inputs below, and the scores become title odds.</p>
+          <div class="rows" id="model-rows"></div>
+          <p class="fine" id="model-fine"></p>
+          <p class="fine">Model estimates only; not betting advice. A not-for-profit personal experiment with no ads or sales.</p>
+        </section>
+      </main>
+
+      <nav class="dots" id="dots" aria-label="Pages"></nav>
+    </div>
+  </div>
+
+  <script src="v2.js"></script>
+</body>
+</html>

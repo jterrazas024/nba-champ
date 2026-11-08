@@ -28,7 +28,7 @@ A live website that shows each NBA team's probability of winning the 2026-27 cha
 - Replay a past postseason offline at chosen dates (cached pages, no network): `python pipeline/replay_playoffs.py 2025 2025-04-13 2025-05-10 --pages data/raw/playoff_replay data/raw/backtest`
 - Calibrate/score the playoff simulation (offline, about 90 seconds, not part of the daily build): `python pipeline/calibrate_sim.py`
 - Backtest (not part of the daily build): `python pipeline/backtest/fetch_history.py` (one-off, about 140 requests, cached in `data/raw/backtest/`), then `python pipeline/backtest/run_backtest.py`
-- Preview site: `python -m http.server 8000` then open http://localhost:8000
+- Preview site: `python -m http.server 8000` then open http://localhost:8000 (redesign in progress: http://localhost:8000/v2.html, files `v2.html`, `v2.css`, `v2.js`; `?theme=amber|black` forces a theme; fonts in `fonts/`, Anton under the SIL OFL; team crests are original SVG monograms, not official logos)
   (opening `index.html` by double-click will not load `odds.json` because of browser rules, so use the local server)
 
 ## The contract: `data/odds.json`
