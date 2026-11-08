@@ -58,8 +58,11 @@ def _date(series: pd.Series) -> pd.Series:
     return pd.to_datetime(series, format="%a, %b %d, %Y", errors="coerce")
 
 
-def parse_ratings(html: str) -> pd.DataFrame:
+def parse_ratings(html: str, team_names: dict = TEAM_BY_NAME) -> pd.DataFrame:
     """Team ratings from the season page's `advanced-team` table.
+
+    `team_names` maps a team name on the page to a Team (the default is today's names; the backtest
+    passes a season-specific map for franchises that moved or were renamed).
 
     Returns one row per team: team_id, name, w, l, games, mov, sos, srs, ortg, drtg, nrtg.
     The "League Average" row is dropped and a trailing "*" on a team name is removed.
@@ -68,13 +71,13 @@ def parse_ratings(html: str) -> pd.DataFrame:
     names = text["Team"].astype("string").str.rstrip("*").str.strip()
     keep = names.notna() & (names != "League Average")
     names = names[keep]
-    unknown = sorted(set(names) - set(TEAM_BY_NAME))
+    unknown = sorted(set(names) - set(team_names))
     if unknown:
         raise ParseError(f"ratings page has team names we do not know: {unknown}")
 
     rows = text[keep]
     out = pd.DataFrame({
-        "team_id": names.map(lambda n: TEAM_BY_NAME[n].id),
+        "team_id": names.map(lambda n: team_names[n].id),
         "name": names,
         "w": _numbers(rows["W"]),
         "l": _numbers(rows["L"]),
@@ -89,13 +92,15 @@ def parse_ratings(html: str) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
-def parse_players(html: str) -> pd.DataFrame:
+def parse_players(html: str, team_codes: dict = TEAM_BY_BR_CODE) -> pd.DataFrame:
     """Player advanced stats from the season's `advanced` table.
 
     Returns one row per table row: player_id, player, team_br, team_id, is_total, g, mp, bpm.
     A player traded mid-season has a total row (team_br like "2TM", is_total True, team_id None)
     followed by one row per team he played for, in the order he played for them. Rows are kept
     in page order. The "League Average" row and any repeated header rows are dropped.
+    `team_codes` maps the site's team codes to Team (default: today's codes; the backtest passes
+    season-specific ones).
     """
     text, links = _read_table(html, "advanced", {"Player", "Team", "G", "MP", "BPM"})
     keep = text["Player"].notna() & ~text["Player"].isin(["League Average", "Player"])
@@ -111,7 +116,7 @@ def parse_players(html: str) -> pd.DataFrame:
         "player_id": ids,
         "player": text["Player"],
         "team_br": team_br,
-        "team_id": team_br.map(lambda c: TEAM_BY_BR_CODE[c].id if c in TEAM_BY_BR_CODE else None),
+        "team_id": team_br.map(lambda c: team_codes[c].id if c in team_codes else None),
         "is_total": team_br.str.fullmatch(r"\dTM").fillna(False).astype(bool),
         "g": _numbers(text["G"]),
         "mp": _numbers(text["MP"]),
@@ -141,7 +146,7 @@ def parse_injuries(html: str) -> pd.DataFrame:
     return out.reset_index(drop=True)
 
 
-def parse_games(html: str) -> pd.DataFrame:
+def parse_games(html: str, team_names: dict = TEAM_BY_NAME) -> pd.DataFrame:
     """Finished games from a monthly results page's `schedule` table.
 
     Returns one row per completed game, oldest first: date, away_id, away_pts, home_id, home_pts, notes.
@@ -151,9 +156,9 @@ def parse_games(html: str) -> pd.DataFrame:
     text, _ = _read_table(html, "schedule", {"Date", "Visitor/Neutral", "PTS", "Home/Neutral", "PTS.1"})
     out = pd.DataFrame({
         "date": _date(text["Date"]),
-        "away_id": text["Visitor/Neutral"].map(lambda n: TEAM_BY_NAME[n].id if n in TEAM_BY_NAME else None),
+        "away_id": text["Visitor/Neutral"].map(lambda n: team_names[n].id if n in team_names else None),
         "away_pts": _numbers(text["PTS"]),
-        "home_id": text["Home/Neutral"].map(lambda n: TEAM_BY_NAME[n].id if n in TEAM_BY_NAME else None),
+        "home_id": text["Home/Neutral"].map(lambda n: team_names[n].id if n in team_names else None),
         "home_pts": _numbers(text["PTS.1"]),
         "notes": text["Notes"].fillna("").astype(str) if "Notes" in text.columns else "",
     })
