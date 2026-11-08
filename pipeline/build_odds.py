@@ -38,8 +38,9 @@ HISTORY_DAYS = 30               # how many daily values each team keeps in `hist
 CHANGE_WINDOW_DAYS = 3          # prob_change_1d needs an earlier history entry at most this many days back
 EARLY_SEASON_NOTE_GAMES = 10    # below this many games, add a note that net rating leans on last season
 MAX_NOTES = 4
-SEASON_MONTHS = ["october", "november", "december", "january", "february", "march", "april"]
-MONTH_INDEX = {10: 0, 11: 1, 12: 2, 1: 3, 2: 4, 3: 5, 4: 6}
+SEASON_MONTHS = ["october", "november", "december", "january", "february", "march", "april", "may", "june"]
+MONTH_INDEX = {10: 0, 11: 1, 12: 2, 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8}
+DEFAULT_MONTH_INDEX = 6         # any other month (offseason) starts from April, as before May and June were added
 
 INPUT_LABELS = {
     "net_rating": "net rating", "star_power": "star power", "recent_form": "recent form",
@@ -67,7 +68,7 @@ def fetch_recent_games(client: BRClient, end_year: int, today: date, team_ids: l
 
     Stops at October at the latest. Returns all finished games found (oldest first).
     """
-    start = MONTH_INDEX.get(today.month, len(SEASON_MONTHS) - 1)
+    start = MONTH_INDEX.get(today.month, DEFAULT_MONTH_INDEX)
     frames = []
     for index in range(start, -1, -1):
         month = SEASON_MONTHS[index]

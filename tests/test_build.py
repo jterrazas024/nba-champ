@@ -352,3 +352,30 @@ def test_validator_history_rules(built):
     for t in many["teams"]:
         t["history"] = [0.0] * 31
     assert any("at most 30" in p for p in validate_odds(many))
+
+
+# ---------- month handling for recent form (May and June were added for the playoff phase) ----------
+
+def _never_enough_games_client(months: list[str]) -> FakeClient:
+    """A client serving one empty-ish results page per month, so no team ever reaches 20 games."""
+    from tests.synthetic import games_page
+    return FakeClient({f"/leagues/NBA_2027_games-{m}.html": games_page(date(2026, 10, 20), 1) for m in months})
+
+
+@pytest.mark.parametrize("today,expected_first", [
+    (date(2026, 10, 25), "october"), (date(2026, 11, 8), "november"), (date(2027, 1, 15), "january"),
+    (date(2027, 4, 10), "april"),
+    (date(2026, 8, 20), "april"),   # offseason months fall back to April, exactly as before May/June existed
+])
+def test_recent_form_month_walk_is_unchanged_during_the_regular_season(today, expected_first):
+    client = _never_enough_games_client(list(build_odds.SEASON_MONTHS))
+    build_odds.fetch_recent_games(client, 2027, today, [t.id for t in config.TEAMS])
+    first = client.paths[0].rsplit("-", 1)[1].removesuffix(".html")
+    assert first == expected_first
+    assert client.paths[-1].endswith("october.html")   # always walks back to October when games are scarce
+
+
+def test_may_and_june_have_their_own_pages():
+    client = _never_enough_games_client(list(build_odds.SEASON_MONTHS))
+    build_odds.fetch_recent_games(client, 2027, date(2027, 5, 20), [t.id for t in config.TEAMS])
+    assert client.paths[0].endswith("may.html")

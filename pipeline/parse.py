@@ -149,19 +149,15 @@ def parse_injuries(html: str) -> pd.DataFrame:
 def parse_games(html: str, team_names: dict = TEAM_BY_NAME) -> pd.DataFrame:
     """Finished games from a monthly results page's `schedule` table.
 
-    Returns one row per completed game, oldest first: date, away_id, away_pts, home_id, home_pts, notes.
-    Games with no score yet (future or postponed), separator rows such as "Playoffs", and games
-    involving a team we do not know are dropped.
+    A thin wrapper over `pipeline.schedule.parse_schedule`. Returns one row per completed game,
+    oldest first: date, away_id, away_pts, home_id, home_pts, notes. Games with no score yet
+    (future or postponed), separator rows such as "Playoffs", and games involving a team we do not
+    know are dropped. It does NOT filter by stage: finished play-in and playoff games on the page
+    are included (the backtest cuts a page at its "Playoffs" row itself, and play-in-era pages have
+    no such row; see the schedule module docstring).
     """
-    text, _ = _read_table(html, "schedule", {"Date", "Visitor/Neutral", "PTS", "Home/Neutral", "PTS.1"})
-    out = pd.DataFrame({
-        "date": _date(text["Date"]),
-        "away_id": text["Visitor/Neutral"].map(lambda n: team_names[n].id if n in team_names else None),
-        "away_pts": _numbers(text["PTS"]),
-        "home_id": text["Home/Neutral"].map(lambda n: team_names[n].id if n in team_names else None),
-        "home_pts": _numbers(text["PTS.1"]),
-        "notes": text["Notes"].fillna("").astype(str) if "Notes" in text.columns else "",
-    })
-    done = out.dropna(subset=["date", "away_id", "away_pts", "home_id", "home_pts"]).copy()
+    from pipeline.schedule import parse_schedule   # imported here: schedule.py imports helpers from this module
+    games = parse_schedule(html, team_names)
+    done = games[games["is_played"]].dropna(subset=["away_id", "home_id"]).copy()
     done[["away_pts", "home_pts"]] = done[["away_pts", "home_pts"]].astype(int)
-    return done.sort_values("date", kind="stable").reset_index(drop=True)
+    return done[["date", "away_id", "away_pts", "home_id", "home_pts", "notes"]].reset_index(drop=True)
