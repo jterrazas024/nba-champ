@@ -1,4 +1,5 @@
-# Refreshes data/odds.json every day and on demand, then commits it to main.
+# Rebuilds data/odds.json from Basketball-Reference every day and on demand, then commits it to main.
+# If the build fails (blocked, page changed, bad data) the job fails and the previous odds.json stays.
 # GitHub Pages serves main, so the live site updates after the push.
 name: Refresh odds
 
@@ -32,8 +33,8 @@ jobs:
       - name: Run tests
         run: pytest
 
-      - name: Refresh odds.json
-        run: python pipeline/refresh_timestamp.py
+      - name: Build odds.json from Basketball-Reference
+        run: python pipeline/build_odds.py
 
       - name: Commit and push if the file changed
         run: |

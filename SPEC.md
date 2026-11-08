@@ -102,13 +102,15 @@ nba-title-odds/
 
 | Input | Weight | Definition | v0 status |
 |---|---|---|---|
-| Net rating (SoS-adjusted) | 38% | Points scored minus allowed per 100 possessions, adjusted for schedule (use SRS or opponent-adjusted NRtg), blended with a preseason prior | Build |
-| Star power | 25% | `0.6 × BPM(Star A) + 0.4 × BPM(Star B)`. Stars = the two highest-BPM players on the roster with at least 15 mpg and a minimum games threshold | Build |
-| Recent form | 10% | Net rating over the team's last 20 games | Build |
-| Star availability | 10% | Games played ÷ team games, for Star A and B, over the last 3 seasons weighted 0.5 / 0.3 / 0.2 (most recent first), averaged; reduced if currently injured | Build |
-| Healthy / core net rating | 10% | Team net rating in games where both stars played | Later (needs game logs); renormalize weights until built |
-| Rotation availability | 5% | Top 9 players by minutes: minutes-weighted share of team games each has played | Build |
-| Clutch | 2% | Win % in clutch games (last 5 min of 4th/OT, score within 5), compared against non-clutch win % | Build; also shown as a regression-risk flag |
+| Net rating (SoS-adjusted) | 38% | Points scored minus allowed per 100 possessions: `NRtg + SOS × min(1, games/40)` (schedule strength phased in, since early SOS is noisy), blended with last season's rating (regressed to 70% of the league mean) using `w = games/(games+20)` | Built (v0) |
+| Star power | 25% | `0.6 × BPM(Star A) + 0.4 × BPM(Star B)`. Stars = the two highest-BPM players on the roster with at least 15 mpg and at least 40% of the team's games (never fewer than 3 or more than 20) | Built (v0) |
+| Recent form | 10% | Average point differential per game over the team's last 20 finished games (the results pages have scores but no possessions); needs at least 5 games | Built (v0) |
+| Star availability | 10% | Games played ÷ team games, for Star A and B, over the last 3 seasons weighted 0.5 / 0.3 / 0.2 (most recent first), averaged; multiplied by an injury factor (Out For Season ×0.25, Out ×0.6, Day To Day ×0.9; day-to-day entries older than 14 days are ignored) | Built (v0) |
+| Healthy / core net rating | 10% | Team net rating in games where both stars played | **Dropped** (needs per-game player logs, which the source's robots.txt disallows); weight 0 |
+| Rotation availability | 5% | Top 9 players by minutes: minutes-weighted share of team games each has played | Built (v0) |
+| Clutch | 2% | Win % in clutch games (last 5 min of 4th/OT, score within 5), compared against non-clutch win % | **Dropped** (no usable data source); weight 0 |
+
+**Weights in use** (`pipeline/config.py`): the five built inputs keep their points (38 / 25 / 10 / 10 / 5) renormalized to sum to 1.0, i.e. each divided by 88: net rating 43.2%, star power 28.4%, recent form 11.4%, star availability 11.4%, rotation availability 5.7%. A team missing one input has its remaining weights renormalized, with a note.
 
 ### 6.2 Filters / penalties
 
@@ -170,7 +172,7 @@ Convert composite to a strength rating, project final standings, seed the bracke
 }
 ```
 
-Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_prob`; missing inputs are `null` and excluded from the contribution total; file under 100 KB. The schema may grow, but fields above can't be removed or renamed without updating the pipeline, site, and tests together.
+Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_prob`; missing inputs are `null` and excluded from the contribution total; file under 100 KB. All 7 input keys always appear: dropped inputs (`core_net_rating`, `clutch`) have weight `0.0` and are `null` for every team, and the site hides them. `prob_change_1d` is `null` when there is no previous real file (the first real run, or the previous file was sample data) and otherwise compares with the previous committed file; real daily history comes in Phase 7. Each team has at most 4 `notes`. The schema may grow, but fields above can't be removed or renamed without updating the pipeline, site, and tests together.
 
 ---
 
@@ -193,7 +195,9 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 - **Steps:** check out the repo → set up Python → install requirements → run tests → run `build_odds.py` → if `odds.json` changed, commit and push to `main`.
 - **Failure behavior:** the job fails visibly (email from GitHub) and leaves the last good `odds.json` in place. Never commit a file that fails validation.
 - **Permissions:** the workflow needs `contents: write` to push the update.
-- **Cache:** raw pulls cached to avoid hammering sources and to stay under rate limits.
+- **Cache:** raw pulls cached to avoid hammering sources and to stay under rate limits. A run makes about 8 to 10 requests (ratings for this and last season, player pages for three seasons, injuries, and 1 to 3 monthly results pages), one every 4 seconds, so it takes about 30 seconds; Actions starts each run with an empty cache.
+- **Nothing to do:** before the season starts, and after the regular season ends, the build exits successfully without changing the file (playoff odds come in Phase 7).
+- **Checks before writing:** 30 teams, enough players per team, no NaN, the SPEC contract (`pipeline/validate.py`), and no team's title probability moving more than 15 points in one update. The file is written to a temporary name and swapped in.
 
 ---
 

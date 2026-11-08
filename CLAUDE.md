@@ -21,8 +21,8 @@ A live website that shows each NBA team's probability of winning the 2026-27 cha
 ## Commands
 
 - Install: `pip install -r requirements.txt` (inside the virtual environment: `python3.12 -m venv .venv`, then use `.venv/bin/python` and `.venv/bin/pytest`)
-- Refresh timestamp (Phase 2 stand-in, run daily by the Action): `python pipeline/refresh_timestamp.py`
-- Build odds (Phase 4, not written yet): `python pipeline/build_odds.py`
+- Build odds (run daily by the Action): `python pipeline/build_odds.py` (add `--out /some/path.json` to write somewhere else while experimenting)
+- Check the plan without sending requests: `python pipeline/spike/probe_sources.py --dry-run`
 - Run the refresh Action by hand: `gh workflow run refresh.yml`, then `gh run list --workflow refresh.yml`
 - Run tests: `pytest`
 - Preview site: `python -m http.server 8000` then open http://localhost:8000
@@ -38,12 +38,11 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 
 ## Model rules
 
-- Starting weights live in one place (`pipeline/config.py`) and must sum to 1.0:
-  net rating 38%, star power 25%, recent form 10%, star availability 10%, healthy/core net rating 10%, rotation availability 5%, clutch 2%.
-- If an input is not available yet, renormalize the remaining weights rather than filling with fake numbers.
+- Starting weights live in one place (`pipeline/config.py`) and must sum to 1.0. In points: net rating 38, star power 25, recent form 10, star availability 10, rotation availability 5, divided by 88. Clutch and core net rating are dropped (weight 0; no usable data source).
+- If an input is not available, renormalize the remaining weights rather than filling with fake numbers (per team if just that team lacks it).
 - Early season: blend current-season stats with a preseason prior using `w_current = games_played / (games_played + 20)`.
 - Star metric is BPM for now. Don't swap it without asking.
-- Never present placeholder or fake data as real. Fake data is only for Phase 1 and must be labeled `"is_sample": true` in `odds.json`.
+- Never present placeholder or fake data as real. Fake data is only for tests and must be labeled `"is_sample": true` if it ever lands in `odds.json`. The live file is real data built by `build_odds.py`.
 
 ## Data source rules
 

@@ -8,7 +8,7 @@ See `SPEC.md` for the full specification and `docs/research-plan.md` for the res
 
 **Live site:** https://jterrazas024.github.io/nba-champ/
 
-**Status:** Phases 0-3 done: the sample-data odds board is live and refreshes daily, and the data source (Basketball-Reference) is chosen and tested from GitHub Actions. Next: build the real model (Phase 4). Odds shown are sample data until then.
+**Status:** Phases 0-4 done: the odds board shows real model odds, rebuilt every day from Basketball-Reference by a GitHub Action. Next: backtest and tune the model (Phase 6), then a playoff simulation.
 
 **Run locally:** `pip install -r requirements.txt`, `pytest`, then `python -m http.server 8000` and open http://localhost:8000.
 
