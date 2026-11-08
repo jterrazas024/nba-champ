@@ -76,6 +76,18 @@ ROTATION_SIZE = 9
 FORM_GAMES = 20
 FORM_MIN_GAMES = 5             # fewer finished games than this: recent form is "not available"
 
+# ---- From inputs to odds (SPEC.md sections 6.2 and 6.3) ----
+TEMPERATURE = 0.6              # softmax temperature: lower = favorites get a bigger share
+PROB_DECIMALS = 6              # title_prob is stored to 6 decimals and sums to exactly 1.0
+
+# Penalties are subtracted from a team's composite score (in z-score units).
+TWO_WAY_RANK_CUTOFF = 17       # offense OR defense ranked worse than 17th...
+TWO_WAY_PENALTY = 0.5          # ...costs 0.5 (once, even if both are bad)
+TWO_WAY_MIN_GAMES = 20         # not applied until a team has played 20 games
+LATE_GATE_RANK_CUTOFF = 10     # from March 1, net rating ranked worse than 10th...
+LATE_GATE_PENALTY = 1.5        # ...costs 1.5
+LATE_GATE_START = (3, 1)       # (month, day) in the year the season ends
+
 # ---- Teams ----
 @dataclass(frozen=True)
 class Team:
