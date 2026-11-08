@@ -50,7 +50,7 @@ const bigText = (p) => (p >= 0.095 ? String(Math.round(p * 100)) : (p * 100).toF
 
 // ---------- State and small helpers ----------
 
-const state = { data: null, teams: [], selectedId: null, page: 0, metric: "title_prob" };
+const state = { data: null, teams: [], selectedId: null, page: 0, metric: "title_prob", homeView: "table" };
 
 const $ = (id) => document.getElementById(id);
 const teamById = (id) => state.teams.find((t) => t.id === id) || null;
@@ -90,7 +90,25 @@ function crest(team, size) {
     style: "font-family:var(--display);font-size:15px;letter-spacing:0.02em",
   }, svg);
   text.textContent = team.id;
+  if (size >= 60) {
+    // A big crest reads as a domed button: dark side and a glint on top of the flat badge.
+    svgEl("circle", { cx: 24, cy: 24, r: 22.2, fill: "url(#sph-shade)", "pointer-events": "none" }, svg);
+    svgEl("circle", { cx: 17, cy: 14.5, r: 8, fill: "url(#sph-spec)", opacity: 0.7, "pointer-events": "none" }, svg);
+  }
   return svg;
+}
+
+// A shaded sphere (SVG group): speckled lit body, optional detail drawn on its surface (seams, rings),
+// then the dark side, bounced light and a glint on top. Gradients live in v2.html and follow the theme.
+function sphere(parent, cx, cy, r, drawSurface) {
+  const g = svgEl("g", { class: "sphere" }, parent);
+  svgEl("circle", { cx: cx, cy: cy, r: r, fill: "url(#sph-base)", filter: "url(#speck-soft)" }, g);
+  if (drawSurface) drawSurface(g);
+  svgEl("circle", { cx: cx, cy: cy, r: r, fill: "url(#sph-shade)", "pointer-events": "none" }, g);
+  svgEl("circle", { cx: cx, cy: cy, r: r, fill: "url(#sph-rim)", "pointer-events": "none" }, g);
+  svgEl("circle", { cx: cx - r * 0.36, cy: cy - r * 0.42, r: r * 0.34, fill: "url(#sph-spec)", opacity: 0.8, "pointer-events": "none" }, g);
+  svgEl("circle", { cx: cx - r * 0.4, cy: cy - r * 0.47, r: r * 0.13, fill: "url(#sph-spec)", "pointer-events": "none" }, g);
+  return g;
 }
 
 function row(label, value, opts) {
@@ -159,6 +177,7 @@ function select(id) {
   updateBig($("home-big"), team.title_prob, false);
   renderTeam();
   renderMapSelection();
+  updateGraphReadout();
 }
 
 function syncSelectionClasses() {
@@ -182,24 +201,22 @@ function buildBall() {
   art.textContent = "";
   const svg = svgEl("svg", { viewBox: "0 0 300 300", class: "ball-svg", "aria-hidden": "true", focusable: "false" }, art);
   const defs = svgEl("defs", {}, svg);
-  const glint = svgEl("radialGradient", { id: "glint", cx: "0.32", cy: "0.28", r: "0.6" }, defs);
-  svgEl("stop", { offset: "0", style: "stop-color:var(--bg);stop-opacity:0.4" }, glint);
-  svgEl("stop", { offset: "1", style: "stop-color:var(--bg);stop-opacity:0" }, glint);
   const clip = svgEl("clipPath", { id: "ballclip" }, defs);
   svgEl("circle", { cx: 150, cy: 150, r: 100 }, clip);
 
-  svgEl("ellipse", { class: "shadow-ell", cx: 150, cy: 284, rx: 72, ry: 8, style: "fill:var(--ink);opacity:0.3", filter: "url(#speck)" }, svg);
+  svgEl("ellipse", { class: "shadow-ell", cx: 150, cy: 284, rx: 74, ry: 9, style: "fill:var(--sph-shadow)", filter: "url(#speck)" }, svg);
 
   const float = svgEl("g", { class: "ball-float" }, svg);
   const spin = svgEl("g", { class: "ball-spin" }, float);
-  svgEl("circle", { cx: 150, cy: 150, r: 100, style: "fill:var(--face)", filter: "url(#speck)" }, spin);
-  svgEl("circle", { cx: 150, cy: 150, r: 100, fill: "url(#glint)" }, spin);
-  const seams = svgEl("g", { "clip-path": "url(#ballclip)", fill: "none", "stroke-linecap": "round" }, spin);
-  ["M150 40 V260", "M40 150 H260", "M84 70 Q128 150 84 230", "M216 70 Q172 150 216 230"].forEach((d) => {
-    svgEl("path", { d: d, style: "stroke:var(--face)", "stroke-width": 11 }, seams);
-    svgEl("path", { d: d, style: "stroke:var(--team)", "stroke-width": 6 }, seams);
+  sphere(spin, 150, 150, 100, (g) => {
+    // Seams in the team color, curved a little so they wrap around the sphere.
+    const seams = svgEl("g", { "clip-path": "url(#ballclip)", fill: "none", "stroke-linecap": "round" }, g);
+    ["M150 40 Q156 150 150 260", "M40 150 Q150 192 260 150", "M80 66 Q132 156 84 236", "M220 66 Q176 156 214 236"].forEach((d) => {
+      svgEl("path", { d: d, style: "stroke:var(--sph-lo)", "stroke-width": 11, opacity: 0.8 }, seams);
+      svgEl("path", { d: d, style: "stroke:var(--team)", "stroke-width": 6 }, seams);
+    });
   });
-  svgEl("circle", { cx: 150, cy: 150, r: 98, fill: "none", style: "stroke:var(--team)", "stroke-width": 3, opacity: 0.8 }, spin);
+  svgEl("circle", { cx: 150, cy: 150, r: 98.5, fill: "none", style: "stroke:var(--team)", "stroke-width": 2, opacity: 0.55 }, spin);
 
   // Flecks: small slivers drifting around the ball.
   [[44, 96, -30, 16, 4, 0], [262, 78, 24, 18, 4, 1], [28, 190, 18, 12, 3, 1], [272, 170, -40, 14, 3, 0],
@@ -248,6 +265,203 @@ function buildStrip() {
   });
 }
 
+// ---------- Home: Table / Graph toggle ----------
+
+function setHomeView(view) {
+  state.homeView = view;
+  const graphMode = view === "graph";
+  $("page-home").classList.toggle("graph-mode", graphMode);
+  $("home-strip").hidden = graphMode;
+  $("home-graph").hidden = !graphMode;
+  const wrap = $("home-view");
+  wrap.textContent = "";
+  [["table", "Table"], ["graph", "Graph"]].forEach((opt) => {
+    const b = el("button", opt[0] === view ? "on" : "", opt[1]);
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(opt[0] === view));
+    b.addEventListener("click", () => { if (state.homeView !== opt[0]) setHomeView(opt[0]); });
+    wrap.appendChild(b);
+  });
+  if (graphMode) renderGraph();
+}
+
+// "2026-11-08" -> "Nov 8" (parsed by hand so the time zone cannot shift the day).
+function shortDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+  if (!m) return String(iso);
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+// In the black theme a dark team color (navy) would vanish on the page, so it is lightened for lines.
+function lineColor(hex) {
+  if (document.documentElement.dataset.theme !== "black" || luminance(hex) > 0.12) return hex;
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c) => Math.round(c + (255 - c) * 0.55);
+  return "#" + [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => mix(c).toString(16).padStart(2, "0")).join("");
+}
+
+const graphView = { idx: 0, hi: null, W: 0, H: 0, pts: null };
+
+// Title odds over time for the top eight teams. Sized from the box it sits in so text stays sharp.
+function renderGraph() {
+  const box = $("home-graph");
+  if (box.hidden) return;
+  const dates = Array.isArray(state.data.history_dates) ? state.data.history_dates : [];
+  const teams = state.teams.slice(0, 8).filter((t) => Array.isArray(t.history) && t.history.length === dates.length && dates.length > 0);
+  box.textContent = "";
+  if (!teams.length) {
+    box.appendChild(el("p", "trend-line", "No history in the data yet."));
+    return;
+  }
+  const n = dates.length;
+  graphView.idx = n - 1;
+  graphView.hi = state.selectedId;
+
+  const read = el("div", "graph-read");
+  read.id = "graph-read";
+  read.setAttribute("aria-live", "polite");
+  ["gr-date", "gr-team", "gr-val"].forEach((c) => read.appendChild(el("span", c)));
+  box.appendChild(read);
+  const wrap = el("div", "graph-svg");
+  box.appendChild(wrap);
+  if (n < 2) box.appendChild(el("p", "trend-line graph-note", "Trend builds daily · " + n + " day so far. Today's odds are shown."));
+
+  const W = Math.max(240, Math.round(wrap.clientWidth || 420));
+  const H = Math.max(150, Math.round(wrap.clientHeight || 300));
+  graphView.W = W;
+  graphView.H = H;
+  const L = 34, R = 62, T = 10, B = 24;
+  const hiVal = Math.max(...teams.map((t) => Math.max(...t.history)), 0.01);
+  const steps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.25];
+  const step = steps.find((v) => hiVal / v <= 4.5) || 0.25;
+  const top = Math.ceil(hiVal / step) * step;
+  const px = (i) => (n === 1 ? L + (W - L - R) / 2 : L + (i / (n - 1)) * (W - L - R));
+  const py = (v) => H - B - (v / top) * (H - T - B);
+  graphView.pts = { px, n };
+
+  const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H, role: "group", "aria-label": "Title odds over time for the top eight teams" }, wrap);
+  for (let v = 0; v <= top + 1e-9; v += step) {
+    svgEl("line", { class: "gridl", x1: L, x2: W - R + 6, y1: py(v), y2: py(v) }, svg);
+    const t = svgEl("text", { class: "gaxis", x: L - 6, y: py(v) + 3, "text-anchor": "end" }, svg);
+    t.textContent = Math.round(v * 100) + "%";
+  }
+  [0, n - 1].filter((v, i, a) => a.indexOf(v) === i).forEach((i) => {
+    const t = svgEl("text", { class: "gaxis", x: px(i), y: H - 6, "text-anchor": i === 0 && n > 1 ? "start" : n === 1 ? "middle" : "end" }, svg);
+    t.textContent = shortDate(dates[i]);
+  });
+  const guide = svgEl("line", { class: "guide", x1: 0, x2: 0, y1: T, y2: H - B }, svg);
+  guide.style.display = "none";
+
+  // Label positions at the right edge, spread out so they never overlap.
+  const labels = teams.map((t) => ({ t, y: py(t.history[n - 1]) })).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 15);
+  const over = labels.length ? labels[labels.length - 1].y - (H - B) : 0;
+  if (over > 0) labels.forEach((l) => { l.y -= over; });
+  const labelY = {};
+  labels.forEach((l) => { labelY[l.t.id] = l.y; });
+
+  const dots = {};
+  teams.slice().reverse().forEach((team) => {
+    const c1 = lineColor(colorsOf(team)[0]);
+    const g = svgEl("g", { class: "gline", "data-team": team.id, tabindex: 0, role: "button", "aria-label": team.name + " title odds, " + fmtPct1(team.history[n - 1]) + " on " + shortDate(dates[n - 1]) + ". Arrow keys move through days." }, svg);
+    if (n > 1) {
+      const d = "M" + team.history.map((v, i) => px(i).toFixed(1) + " " + py(v).toFixed(1)).join(" L");
+      svgEl("path", { class: "halo", d: d, fill: "none" }, g);
+      svgEl("path", { class: "ln", d: d, fill: "none", stroke: c1 }, g);
+      svgEl("path", { d: d, fill: "none", stroke: "transparent", "stroke-width": 14 }, g);
+    }
+    const dot = svgEl("circle", { class: "gdot", cx: px(n - 1), cy: py(team.history[n - 1]), r: n === 1 ? 5.5 : 3.6, fill: c1 }, g);
+    dots[team.id] = dot;
+    const lab = svgEl("g", { class: "glabel" }, g);
+    const ly = labelY[team.id];
+    const lx = px(n - 1) + 12;
+    if (Math.abs(ly - py(team.history[n - 1])) > 1) svgEl("path", { class: "leader", d: "M" + (px(n - 1) + 4) + " " + py(team.history[n - 1]) + " L" + (lx - 2) + " " + ly }, lab);
+    svgEl("circle", { cx: lx + 6, cy: ly, r: 7, fill: c1, class: "gdisc" }, lab);
+    const tx = svgEl("text", { x: lx + 17, y: ly + 3.5, class: "gabbr" }, lab);
+    tx.textContent = team.id;
+    g.addEventListener("click", () => pick(team.id));
+    g.addEventListener("focus", () => { graphView.hi = team.id; updateGraphReadout(); });
+    g.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(team.id); return; }
+      const move = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+      if (move) { e.preventDefault(); graphView.idx = Math.min(n - 1, Math.max(0, graphView.idx + move)); updateGraphReadout(); }
+      if (e.key === "Home") { e.preventDefault(); graphView.idx = 0; updateGraphReadout(); }
+      if (e.key === "End") { e.preventDefault(); graphView.idx = n - 1; updateGraphReadout(); }
+    });
+    g.addEventListener("pointerenter", () => { graphView.hi = team.id; updateGraphReadout(); });
+  });
+  graphView.dots = dots;
+  graphView.guide = guide;
+  graphView.teams = teams;
+  graphView.dates = dates;
+  graphView.py = py;
+
+  // Pointer anywhere on the chart picks the day.
+  svg.addEventListener("pointermove", (e) => {
+    if (n < 2) return;
+    const rect = svg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * W;
+    graphView.idx = Math.min(n - 1, Math.max(0, Math.round(((x - L) / (W - L - R)) * (n - 1))));
+    updateGraphReadout();
+  });
+  svg.addEventListener("pointerleave", () => { graphView.idx = n - 1; graphView.hi = state.selectedId; updateGraphReadout(); });
+
+  // The same numbers as a table for screen readers.
+  const table = el("table", "sr-only");
+  table.appendChild(el("caption", "", "Title odds by day, top eight teams"));
+  const head = el("tr");
+  head.appendChild(el("th", "", "Team"));
+  dates.forEach((d) => head.appendChild(el("th", "", shortDate(d))));
+  table.appendChild(head);
+  teams.forEach((t) => {
+    const tr = el("tr");
+    tr.appendChild(el("th", "", t.name));
+    t.history.forEach((v) => tr.appendChild(el("td", "", fmtPct1(v))));
+    table.appendChild(tr);
+  });
+  box.appendChild(table);
+
+  syncSelectionClasses();
+  updateGraphReadout();
+}
+
+// Moves the guide line and the readout to the chosen day and team.
+function updateGraphReadout() {
+  const read = $("graph-read");
+  if (!read || !graphView.teams || $("home-graph").hidden) return;
+  const hiId = graphView.teams.some((t) => t.id === graphView.hi) ? graphView.hi : (graphView.teams.some((t) => t.id === state.selectedId) ? state.selectedId : graphView.teams[0].id);
+  const team = graphView.teams.find((t) => t.id === hiId);
+  const i = graphView.idx;
+  const n = graphView.pts.n;
+  read.querySelector(".gr-date").textContent = shortDate(graphView.dates[i]);
+  read.querySelector(".gr-team").textContent = team.name;
+  read.querySelector(".gr-val").textContent = fmtPct1(team.history[i]);
+  graphView.guide.style.display = n > 1 && i !== n - 1 ? "" : "none";
+  graphView.guide.setAttribute("x1", graphView.pts.px(i));
+  graphView.guide.setAttribute("x2", graphView.pts.px(i));
+  graphView.teams.forEach((t) => {
+    const dot = graphView.dots[t.id];
+    dot.setAttribute("cx", graphView.pts.px(i));
+    dot.setAttribute("cy", graphView.py(t.history[i]));
+    dot.parentNode.classList.toggle("hi", t.id === hiId);
+  });
+}
+
+let graphResizeFrame = 0;
+function watchGraphSize() {
+  const box = $("home-graph");
+  if (!window.ResizeObserver) return;
+  let last = "";
+  new ResizeObserver(() => {
+    if (box.hidden) return;
+    const key = box.clientWidth + "x" + box.clientHeight;
+    if (key === last) return;
+    last = key;
+    cancelAnimationFrame(graphResizeFrame);
+    graphResizeFrame = requestAnimationFrame(renderGraph);
+  }).observe(box);
+}
+
 // ---------- Page 2: Rankings ----------
 
 // Greedy circle layout: biggest at the center, the rest as close as they fit, kept wide and flat.
@@ -285,8 +499,9 @@ function buildBubbles() {
   placed.forEach((p) => {
     const team = p.item.team;
     const g = svgEl("g", { class: "bubble", tabindex: 0, role: "button", "data-team": team.id, "aria-label": team.name + ", " + fmtPct1(team.title_prob) }, svg);
-    svgEl("circle", { cx: p.x, cy: p.y, r: p.r, style: "fill:var(--face)", filter: "url(#speck)" }, g);
-    svgEl("circle", { cx: p.x, cy: p.y, r: p.r - 5, fill: "none", stroke: colorsOf(team)[0], "stroke-width": 2.5, opacity: 0.9 }, g);
+    sphere(g, p.x, p.y, p.r, (surface) => {
+      svgEl("circle", { cx: p.x, cy: p.y, r: p.r - 5, fill: "none", stroke: colorsOf(team)[0], "stroke-width": 2.5, opacity: 0.9 }, surface);
+    });
     const abbr = svgEl("text", { x: p.x, y: p.y + p.r * 0.1, "text-anchor": "middle", "font-size": p.r * 0.52 }, g);
     abbr.textContent = team.id;
     const pct = svgEl("text", { x: p.x, y: p.y + p.r * 0.45, "text-anchor": "middle", "font-size": p.r * 0.27, style: "font-family:var(--mono)" }, g);
@@ -484,7 +699,11 @@ function buildMap() {
   pts.slice().sort((a, b) => b.title_prob - a.title_prob).forEach((team) => {
     const r = 4 + 32 * Math.sqrt(Math.max(team.title_prob, 0));
     const g = svgEl("g", { class: "dotb", "data-team": team.id, tabindex: 0, role: "button", "aria-label": team.name }, svg);
-    svgEl("circle", { cx: px(inputValue("net_rating")(team)), cy: py(inputValue("star_power")(team)), r: r, fill: colorsOf(team)[0] }, g);
+    const cx = px(inputValue("net_rating")(team));
+    const cy = py(inputValue("star_power")(team));
+    svgEl("circle", { cx: cx, cy: cy, r: r, fill: colorsOf(team)[0] }, g);
+    svgEl("circle", { class: "dshade", cx: cx, cy: cy, r: r, fill: "url(#sph-shade)", "pointer-events": "none" }, g);
+    svgEl("circle", { class: "dshade", cx: cx - r * 0.34, cy: cy - r * 0.4, r: r * 0.3, fill: "url(#sph-spec)", "pointer-events": "none" }, g);
     if (r >= 12) {
       const label = svgEl("text", { x: px(inputValue("net_rating")(team)), y: py(inputValue("star_power")(team)) + 3, style: "fill:" + (luminance(colorsOf(team)[0]) > 0.45 ? "#111" : "#fff") }, g);
       label.textContent = team.id;
@@ -550,19 +769,21 @@ function buildModel() {
   rows.textContent = "";
   weights.forEach((x, i) => rows.appendChild(row(WEIGHT_LABELS[x.key] || x.key, Math.round(x.w * 100) + "%", { cls: "static" + (i === 0 ? " sel" : "") })));
 
-  // Slabs: one floating plate per input, as wide as its weight.
+  // Pucks: one floating disc per input, as wide as its weight. Lit top, shaded side, thickness below.
   const box = $("slabs");
   box.textContent = "";
   if (weights.length) {
-    const svg = svgEl("svg", { viewBox: "0 0 360 " + (weights.length * 24 + 6), "aria-hidden": "true", preserveAspectRatio: "xMidYMid meet" }, box);
+    const step = 27, ry = 7, th = 9;
+    const svg = svgEl("svg", { viewBox: "0 0 360 " + (weights.length * step + 14), "aria-hidden": "true", preserveAspectRatio: "xMidYMid meet" }, box);
     const maxW = weights[0].w;
     weights.forEach((x, i) => {
-      const w = 90 + 220 * (x.w / maxW);
+      const rx = (90 + 220 * (x.w / maxW)) / 2;
+      const cy = 12 + i * step;
       const g = svgEl("g", { class: "slab" }, svg);
-      const x0 = (360 - w) / 2;
-      const y = 4 + i * 24;
-      svgEl("rect", { x: x0 - 5, y: y + 5, width: w, height: 16, rx: 8, style: "fill:var(--ext)" }, g);
-      svgEl("rect", { x: x0, y: y, width: w, height: 16, rx: 8, style: "fill:var(--face)", filter: "url(#speck)" }, g);
+      svgEl("ellipse", { cx: 180, cy: cy + th, rx: rx, ry: ry, fill: "url(#puck-side)", filter: "url(#speck)" }, g);
+      svgEl("rect", { x: 180 - rx, y: cy, width: rx * 2, height: th, fill: "url(#puck-side)", filter: "url(#speck)" }, g);
+      svgEl("ellipse", { cx: 180, cy: cy, rx: rx, ry: ry, fill: "url(#sph-base)", filter: "url(#speck)" }, g);
+      svgEl("ellipse", { cx: 180 - rx * 0.28, cy: cy - ry * 0.25, rx: rx * 0.4, ry: ry * 0.42, fill: "url(#sph-spec)", opacity: 0.7 }, g);
     });
   }
 
@@ -726,6 +947,7 @@ function setupTheme() {
     document.documentElement.dataset.theme = next;
     try { localStorage.setItem("champ-theme", next); } catch (e) { /* private mode */ }
     sync();
+    if (state.data && !$("home-graph").hidden) renderGraph(); // line colors depend on the theme
   });
 }
 
@@ -752,6 +974,8 @@ async function init() {
   setupPager();
   buildBall();
   buildStrip();
+  setHomeView("table");
+  watchGraphSize();
   buildBubbles();
   buildRankList();
   buildMap();

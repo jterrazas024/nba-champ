@@ -27,6 +27,41 @@
         <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  12 0 0 0 -2.7" result="mask"/>
         <feComposite in="SourceGraphic" in2="mask" operator="in"/>
       </filter>
+
+      <filter id="speck-soft" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="11" result="noise"/>
+        <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  14 0 0 0 -2.1" result="mask"/>
+        <feComposite in="SourceGraphic" in2="mask" operator="in"/>
+      </filter>
+
+      <!-- Shared sphere shading. Colors come from CSS variables, so both themes use the same shapes:
+           base (lit body), shade (dark side, bottom right), rim (bounced light), spec (glint). -->
+      <radialGradient id="sph-base" cx="0.36" cy="0.3" r="0.82">
+        <stop offset="0" style="stop-color:var(--sph-hi)"/>
+        <stop offset="0.42" style="stop-color:var(--sph-mid)"/>
+        <stop offset="1" style="stop-color:var(--sph-lo)"/>
+      </radialGradient>
+      <radialGradient id="sph-shade" cx="0.3" cy="0.26" r="0.98">
+        <stop offset="0.38" style="stop-color:var(--sph-shade);stop-opacity:0"/>
+        <stop offset="0.72" style="stop-color:var(--sph-shade);stop-opacity:0.45"/>
+        <stop offset="1" style="stop-color:var(--sph-shade);stop-opacity:0.92"/>
+      </radialGradient>
+      <radialGradient id="sph-rim" cx="0.8" cy="0.88" r="0.4">
+        <stop offset="0" style="stop-color:var(--sph-rim);stop-opacity:0.42"/>
+        <stop offset="1" style="stop-color:var(--sph-rim);stop-opacity:0"/>
+      </radialGradient>
+      <radialGradient id="sph-spec" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" style="stop-color:var(--sph-spec);stop-opacity:0.95"/>
+        <stop offset="0.45" style="stop-color:var(--sph-spec);stop-opacity:0.3"/>
+        <stop offset="1" style="stop-color:var(--sph-spec);stop-opacity:0"/>
+      </radialGradient>
+      <!-- Pucks (Model page): lit top, side that darkens toward both edges -->
+      <linearGradient id="puck-side" x1="0" x2="1" y1="0" y2="0">
+        <stop offset="0" style="stop-color:var(--sph-lo)"/>
+        <stop offset="0.35" style="stop-color:var(--sph-mid)"/>
+        <stop offset="0.7" style="stop-color:var(--sph-mid)"/>
+        <stop offset="1" style="stop-color:var(--sph-lo)"/>
+      </linearGradient>
     </defs>
   </svg>
 
@@ -35,7 +70,14 @@
       <header class="top">
         <span class="top-side" aria-hidden="true"></span>
         <div class="loc">
-          <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M3 11 21 3l-8 18-2-8z" fill="currentColor"/></svg>
+          <svg class="trophy" viewBox="0 0 24 24" width="25" height="25" aria-hidden="true" focusable="false">
+            <!-- Original trophy mark: a ball cupped by two swooping ribbons on a slim stem and base -->
+            <circle cx="12" cy="5.4" r="3.9" fill="currentColor"/>
+            <path d="M8.1 5.4h7.8M12 1.5v7.8M9.2 2.7q-1.6 2.7 0 5.4M14.8 2.7q1.6 2.7 0 5.4" fill="none" stroke="var(--bg)" stroke-width="0.7" opacity="0.8"/>
+            <path d="M4.2 7.6C4.4 12.4 9.8 12.2 10.6 18M19.8 7.6C19.6 12.4 14.2 12.2 13.4 18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+            <path d="M12 11.2v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M7.4 22.2h9.2M8.6 19.6h6.8" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/>
+          </svg>
           <span id="season-label">NBA champion</span>
         </div>
         <nav class="topnav" id="topnav" aria-label="Pages"></nav>
@@ -65,7 +107,14 @@
             <h1 class="cap-name" id="home-name"></h1>
             <p class="cap-sub" id="home-sub"></p>
           </div>
-          <div class="strip" id="home-strip" role="group" aria-label="Top eight title contenders"></div>
+          <section class="contenders" id="contenders" aria-label="Top contenders">
+            <div class="cont-head">
+              <h2 class="cont-title">Top contenders</h2>
+              <div class="seg" id="home-view" role="group" aria-label="Contenders view"></div>
+            </div>
+            <div class="strip" id="home-strip" role="group" aria-label="Top eight title contenders"></div>
+            <div class="graph" id="home-graph" hidden></div>
+          </section>
         </section>
 
         <!-- 2. Rankings: bubbles sized by odds, then every team as a row -->
