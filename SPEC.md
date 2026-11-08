@@ -37,7 +37,7 @@ Anyone with the public link who wants a quick view of title odds and why.
 |---|---|---|
 | Pipeline | Python 3.11+, pandas, requests | Runs locally and in GitHub Actions |
 | Contract | `data/odds.json` | Only thing the site reads |
-| Site | `index.html`, `style.css`, `app.js` | No build step, no dependencies |
+| Site | `index.html`, `style.css`, `app.js`, `fonts/` | No build step, no dependencies |
 | Hosting | GitHub Pages, public repo, `main` branch root | Free for public repos |
 | Automation | `.github/workflows/refresh.yml` | Daily cron plus manual "Run workflow" button |
 | Tests | pytest | Math and data-shape checks |

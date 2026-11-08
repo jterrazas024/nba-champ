@@ -28,7 +28,7 @@ A live website that shows each NBA team's probability of winning the 2026-27 cha
 - Replay a past postseason offline at chosen dates (cached pages, no network): `python pipeline/replay_playoffs.py 2025 2025-04-13 2025-05-10 --pages data/raw/playoff_replay data/raw/backtest`
 - Calibrate/score the playoff simulation (offline, about 90 seconds, not part of the daily build): `python pipeline/calibrate_sim.py`
 - Backtest (not part of the daily build): `python pipeline/backtest/fetch_history.py` (one-off, about 140 requests, cached in `data/raw/backtest/`), then `python pipeline/backtest/run_backtest.py`
-- Preview site: `python -m http.server 8000` then open http://localhost:8000
+- Preview site: `python3 -m http.server 8000` then open http://localhost:8000 (`?theme=amber|black` forces a theme; fonts in `fonts/`, Anton under the SIL OFL; team crests are original SVG monograms, not official logos)
   (opening `index.html` by double-click will not load `odds.json` because of browser rules, so use the local server)
 
 ## The contract: `data/odds.json`
@@ -68,7 +68,7 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 
 - Python: type hints on functions, short functions, docstrings that say what a function returns. Formulas get a comment pointing to the section of `SPEC.md` they implement.
 - JavaScript: plain ES modules-free script, `const`/`let`, no dependencies. Handle the "odds.json failed to load" case with a visible message.
-- Charts: hand-built SVG in `charts.js` (no libraries). One color per series, thin bars, hover/keyboard tooltips, and a table view for each chart.
+- Charts: hand-built SVG inside `app.js` (no libraries). One color per series, thin lines, hover/keyboard readouts, and an accessible table for each chart. Look: amber and black themes, Anton display numbers, mono data rows, original SVG team crests.
 - CSS: system font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Text", ...`), CSS variables for colors, light and dark via `prefers-color-scheme`.
 - Prefer clarity over cleverness.
 
