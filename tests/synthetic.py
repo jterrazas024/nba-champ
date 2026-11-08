@@ -102,3 +102,31 @@ class FakeClient:
         self.paths.append(path)
         self.requests_made += 1
         return self.pages[path]
+
+
+# ---------- a fake league for the playoff simulation (pipeline/sim.py) ----------
+
+def sim_league(rating=None, games: int = 82, wins=None, remaining=None):
+    """A 30-team League for sim tests. Team i has rating 0.4 * (i - 14.5) points unless `rating`
+    (a list of 30 numbers) is given, and wins 41 + 2 * (i - 14.5), so wins are distinct inside each
+    conference. `remaining` is a list of (home_index, away_index) games still to play."""
+    import numpy as np
+    from pipeline.sim import League
+    strength = np.array([STRENGTH[t.id] for t in TEAMS])
+    rate = 0.4 * strength if rating is None else np.asarray(rating, dtype=float)
+    won = np.round(41 + 2 * strength) if wins is None else np.asarray(wins, dtype=float)
+    conference = np.array([0 if t.conference == "East" else 1 for t in TEAMS])
+    home = np.array([h for h, _ in remaining or []], dtype=int)
+    away = np.array([a for _, a in remaining or []], dtype=int)
+    return League([t.id for t in TEAMS], rate, np.full(30, games, dtype=float), won, conference, home, away)
+
+
+def full_schedule(seed: int = 0) -> list[tuple[int, int]]:
+    """About a full 82-game season of (home, away) pairs: every ordered pair once, plus 360 random extras."""
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    games = [(h, a) for h in range(30) for a in range(30) if h != a]
+    while len(games) < 1230:
+        h, a = rng.choice(30, 2, replace=False)
+        games.append((int(h), int(a)))
+    return games

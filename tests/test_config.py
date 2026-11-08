@@ -50,3 +50,8 @@ def test_weights_are_normalized_and_drop_unavailable_inputs():
 def test_star_and_availability_weights_sum_to_one():
     assert abs(sum(config.STAR_WEIGHTS) - 1.0) < 1e-12
     assert abs(sum(config.AVAILABILITY_SEASON_WEIGHTS) - 1.0) < 1e-12
+
+
+def test_simulation_constants_are_sensible():
+    assert config.MARGIN_PER_Z > 0 and config.HOME_COURT_POINTS >= 0 and config.GAME_LOGISTIC_SCALE > 0
+    assert config.SIM_RUNS >= 1000 and config.RATING_UNCERTAINTY_POINTS >= 0

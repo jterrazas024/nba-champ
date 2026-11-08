@@ -135,3 +135,13 @@ TEAMS = (
 TEAM_BY_ID = {t.id: t for t in TEAMS}
 TEAM_BY_BR_CODE = {t.br_code: t for t in TEAMS}
 TEAM_BY_NAME = {t.name: t for t in TEAMS}
+
+# ---- Playoff simulation (SPEC.md section 6.4; built, not yet used by the daily build) ----
+# A team's strength in points of margin against an average team is MARGIN_PER_Z * composite.
+# MARGIN_PER_Z is a placeholder here; the calibration script (pipeline/calibrate_sim.py) sets it.
+MARGIN_PER_Z = 4.0
+HOME_COURT_POINTS = 2.5        # added to the home team's margin in every game
+GAME_LOGISTIC_SCALE = 6.5      # p_home = 1 / (1 + exp(-(r_home - r_away + HCA) / scale)); ~ a 12-point game sd
+SIM_RUNS = 20000               # simulated seasons per run
+RATING_UNCERTAINTY_POINTS = 3.0   # sd of the per-simulation rating noise at 0 games played
+UNCERTAINTY_HALF_GAMES = 20       # noise sd = RATING_UNCERTAINTY_POINTS * sqrt(20 / (games + 20))
