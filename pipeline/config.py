@@ -136,7 +136,8 @@ TEAM_BY_ID = {t.id: t for t in TEAMS}
 TEAM_BY_BR_CODE = {t.br_code: t for t in TEAMS}
 TEAM_BY_NAME = {t.name: t for t in TEAMS}
 
-# ---- Playoff simulation (SPEC.md section 6.4; built, not yet used by the daily build) ----
+# ---- Playoff simulation (SPEC.md section 6.4; runs in the daily build in SHADOW MODE: published in
+# separate fields, the headline title_prob stays the softmax) ----
 # A team's strength in points of margin against an average team is MARGIN_PER_Z * composite.
 # MARGIN_PER_Z was fitted once, on 2026-11-08, by `python pipeline/calibrate_sim.py`: the value (grid of
 # 15 values, refined to 0.1) that minimizes the sum of squared gaps between the simulation's title
@@ -149,3 +150,8 @@ GAME_LOGISTIC_SCALE = 6.5      # p_home = 1 / (1 + exp(-(r_home - r_away + HCA) 
 SIM_RUNS = 20000               # simulated seasons per run
 RATING_UNCERTAINTY_POINTS = 3.0   # sd of the per-simulation rating noise at 0 games played
 UNCERTAINTY_HALF_GAMES = 20       # noise sd = RATING_UNCERTAINTY_POINTS * sqrt(20 / (games + 20))
+# The simulation models seeding and the play-in itself, so its strength is the composite BEFORE the
+# penalties (the two-way and late-season penalties exist to approximate playoff-bracket effects in
+# the softmax). Set to True to feed it the composite AFTER penalties instead (the way MARGIN_PER_Z
+# was fitted on 2026-11-08).
+SIM_USES_PENALTIES = False

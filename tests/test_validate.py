@@ -27,3 +27,29 @@ def test_validator_catches_bad_timestamp():
     odds = json.loads(REAL_FILE.read_text())
     odds["generated_at"] = "yesterday"
     assert any("generated_at" in p for p in validate_odds(odds))
+
+
+def _with_sim() -> dict:
+    odds = json.loads(REAL_FILE.read_text())
+    odds["sim"] = {"runs": 20000, "seed_date": "2026-11-08", "mode": "regular_season", "margin_per_z": 3.3}
+    for team in odds["teams"]:
+        team["sim_prob"] = 1 / 30
+        team["sim"] = {"finals": 0.1, "conf_finals": 0.2, "make_playoffs": 0.5, "seed_avg": 4.5}
+    return odds
+
+
+def test_simulation_fields_are_optional_and_checked_when_present():
+    assert validate_odds(_with_sim()) == []
+    bad = _with_sim(); bad["teams"][0]["sim_prob"] = 0.5
+    assert any("sim_prob" in p and "sum" in p for p in validate_odds(bad))
+    bad = _with_sim(); bad["teams"][0]["sim"]["finals"] = 1.2
+    assert any("sim.finals" in p for p in validate_odds(bad))
+    bad = _with_sim(); bad["teams"][0]["sim"]["seed_avg"] = 16
+    assert any("seed_avg" in p for p in validate_odds(bad))
+    ok = _with_sim(); ok["teams"][0]["sim"]["seed_avg"] = None          # never made the playoffs
+    assert validate_odds(ok) == []
+    for runs in (0, -5, 2.5, "x"):
+        bad = _with_sim(); bad["sim"]["runs"] = runs
+        assert any("sim.runs" in p for p in validate_odds(bad))
+    partial = _with_sim(); del partial["teams"][0]["sim_prob"]
+    assert any("sim_prob" in p for p in validate_odds(partial))

@@ -25,10 +25,11 @@ import pandas as pd
 # Allow running as a plain script (python pipeline/build_odds.py) as well as a module.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline import config, features, model  # noqa: E402
+from pipeline import config, features, model, sim, sim_inputs  # noqa: E402
 from pipeline.fetch import BRClient, Blocked, FetchError  # noqa: E402
 from pipeline.parse import ParseError, parse_games, parse_injuries, parse_players, parse_ratings  # noqa: E402
-from pipeline.validate import validate_odds  # noqa: E402
+from pipeline.seed import daily_seed  # noqa: E402
+from pipeline.validate import check_sim, validate_odds  # noqa: E402
 
 ODDS_PATH = Path(__file__).resolve().parent.parent / "data" / "odds.json"
 MODEL_VERSION = "v0"
@@ -83,8 +84,13 @@ def fetch_recent_games(client: BRClient, end_year: int, today: date, team_ids: l
 
 # ---------- building the file ----------
 
-def build(client: BRClient, today: date, previous: dict | None) -> BuildResult:
-    """Fetch, compute, and assemble the odds. Raises BuildError/ParseError/FetchError on trouble."""
+def build(client: BRClient, today: date, previous: dict | None, with_sim: bool = True) -> BuildResult:
+    """Fetch, compute, and assemble the odds. Raises BuildError/ParseError/FetchError on trouble.
+
+    With `with_sim`, the playoff simulation is run afterwards and published in extra fields
+    (shadow mode, SPEC.md section 7). That stage is optional: if it fails for any reason, the
+    softmax odds are returned without the extra fields and a WARNING goes to stderr.
+    """
     end_year = config.season_end_year(today)
     ratings = parse_ratings(client.get_html(f"/leagues/NBA_{end_year}.html", f"ratings_{end_year}"))
     if len(ratings) != len(config.TEAMS):
@@ -164,7 +170,69 @@ def build(client: BRClient, today: date, previous: dict | None) -> BuildResult:
         "history_dates": history_dates,
         "teams": teams,
     }
-    return BuildResult(odds, f"Built odds for {len(teams)} teams ({client.requests_made} requests).")
+    simulated = False
+    if with_sim:
+        simulated = _add_simulation(odds, client, today, end_year, ratings, games_played,
+                                    final if config.SIM_USES_PENALTIES else composite)
+    note = "with" if simulated else "without"
+    return BuildResult(odds, f"Built odds for {len(teams)} teams ({client.requests_made} requests, {note} simulation).")
+
+
+# ---------- the playoff simulation, shadow mode (SPEC.md sections 6.4 and 7) ----------
+
+def _run_simulation(client: BRClient, today: date, end_year: int, ratings: pd.DataFrame,
+                    games_played: pd.Series, composite: pd.Series) -> tuple[dict[str, dict], dict]:
+    """Simulate the rest of the season. Returns ({team_id: per-team sim fields}, top-level `sim` dict).
+
+    Strength = MARGIN_PER_Z x composite; the schedule is every unplayed regular-season game from
+    this month through April; the random seed depends only on the date (pipeline/seed.py), so a
+    same-day rerun with the same inputs gives the same numbers. Raises on any problem.
+    """
+    month_index = MONTH_INDEX.get(today.month, DEFAULT_MONTH_INDEX)
+    remaining = sim_inputs.fetch_remaining_schedule(client, end_year, month_index)
+    sim_inputs.check_remaining(remaining, games_played)
+    by_team = ratings.set_index("team_id")
+    league = sim.league_from_frames(composite * config.MARGIN_PER_Z, games_played, by_team["w"].astype(float),
+                                    {t.id: t.conference for t in config.TEAMS}, remaining)
+    seed = daily_seed(today, config.season_label(end_year), MODEL_VERSION)
+    result = sim.simulate(league, runs=config.SIM_RUNS, seed=seed, fmt="playin")
+    title = result.title_probs()
+    per_team = {}
+    for i, tid in enumerate(result.ids):
+        seed_avg = result.avg_seed[i]
+        per_team[tid] = {
+            "sim_prob": float(title[tid]),
+            "sim": {"finals": round(float(result.finals[i]), 4), "conf_finals": round(float(result.conf_finals[i]), 4),
+                    "make_playoffs": round(float(result.playoffs[i]), 4),
+                    "seed_avg": None if pd.isna(seed_avg) else round(float(seed_avg), 2)},
+        }
+    top = {"runs": int(result.runs), "seed_date": today.isoformat(), "mode": "regular_season",
+           "margin_per_z": config.MARGIN_PER_Z}
+    return per_team, top
+
+
+def _add_simulation(odds: dict, client: BRClient, today: date, end_year: int, ratings: pd.DataFrame,
+                    games_played: pd.Series, composite: pd.Series) -> bool:
+    """Add the simulation fields to `odds` in place. Returns True if added.
+
+    Failure isolation: the simulation is optional in shadow mode. Any problem (a schedule page that
+    cannot be fetched or read, a block by the site, an error in the simulator, a failed sanity
+    check) leaves `odds` exactly as the softmax produced it and prints one WARNING line to stderr.
+    """
+    try:
+        per_team, top = _run_simulation(client, today, end_year, ratings, games_played, composite)
+        trial = {"teams": [{**t, **per_team[t["id"]]} for t in odds["teams"]], "sim": top}
+        problems = check_sim(trial)
+        if problems:
+            raise BuildError("; ".join(problems))
+    except Exception as err:  # noqa: BLE001  (deliberately broad: nothing here may stop the standard odds)
+        reason = " ".join(f"{type(err).__name__}: {err}".split())
+        print(f"WARNING playoff simulation skipped, publishing the standard odds without sim fields ({reason})",
+              file=sys.stderr)
+        return False
+    odds["teams"] = trial["teams"]
+    odds["sim"] = top
+    return True
 
 
 def _previous_history(previous: dict | None, team_ids: list[str]) -> dict[str, dict[str, float]]:

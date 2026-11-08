@@ -19,8 +19,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline import build_odds, config, model, sim  # noqa: E402
-from pipeline.schedule import parse_schedule  # noqa: E402
+from pipeline import build_odds, config, model, sim, sim_inputs  # noqa: E402
 
 MARGIN_GRID = (1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 7.0, 8.0, 10.0, 12.0, 15.0)
 PLAYIN_FIRST_SEASON = 2021     # seasons ending in 2021 or later used the play-in
@@ -77,20 +76,16 @@ def todays_league_inputs(day: date, day_dir: Path, seed: int = 0):
     current wins and games played, team -> "East"/"West", and the games left (known unplayed games
     from the cached monthly pages plus made-up filler for the months we do not have).
     """
-    odds = build_odds.build(OfflineClient(day_dir), day, None).odds
+    odds = build_odds.build(OfflineClient(day_dir), day, None, with_sim=False).odds
     teams = pd.DataFrame(odds["teams"]).set_index("id")
     final = teams["composite"].astype(float)
     wins = teams["record"].str.split("-").str[0].astype(float)
     games = teams["record"].map(lambda r: sum(int(x) for x in r.split("-"))).astype(float)
     conferences = teams["conference"].to_dict()
     end_year = config.season_end_year(day)
-    unplayed = []
-    for month in build_odds.SEASON_MONTHS:
-        page = day_dir / f"games_{end_year}_{month}.html"
-        if page.exists():
-            sched = parse_schedule(page.read_text(encoding="utf-8", errors="replace"))
-            unplayed.append(sched[~sched["is_played"] & (sched["stage"] == "regular") & sched["home_id"].notna()])
-    known = pd.concat(unplayed) if unplayed else pd.DataFrame(columns=["home_id", "away_id"])
+    pages = [(day_dir / f"games_{end_year}_{month}.html").read_text(encoding="utf-8", errors="replace")
+             for month in build_odds.SEASON_MONTHS if (day_dir / f"games_{end_year}_{month}.html").exists()]
+    known = sim_inputs.unplayed_regular_games(pages)
     remaining = fill_schedule(known, config.SEASON_GAMES - games, np.random.default_rng(seed))
     return final, wins, games, conferences, remaining
 

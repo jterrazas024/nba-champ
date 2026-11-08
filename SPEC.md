@@ -127,11 +127,11 @@ nba-title-odds/
 5. `title_prob_i = exp(composite_i / T) / Σ_j exp(composite_j / T)`.
 6. `T` (temperature) starts at 0.6 and is tuned on the backtest so the spread looks like a real market (favorite roughly 15-30% in-season; sharper late in the year).
 
-### 6.4 v1 upgrade: playoff simulation (built, not yet live)
+### 6.4 v1 upgrade: playoff simulation (shadow mode)
 
 `pipeline/sim.py` converts the composite to a strength in points of margin (`MARGIN_PER_Z x composite`, `MARGIN_PER_Z = 3.3`), adds per-run rating noise (sd `3.0 x sqrt(20 / (games + 20))` points), plays the remaining regular-season schedule with a logistic single-game model (`p_home = 1 / (1 + exp(-(r_home - r_away + 2.5) / 6.5))`), ranks each conference (random tie-breaks), runs the 2020-21 play-in for seeds 7-10, then best-of-7 series (home court 2-2-1-1-1) through the Finals. Title % is the share of 20,000 runs won, rounded with `model.round_probs`. It can start from a bracket with series in progress (eliminated teams get exactly 0). A daily seed from `pipeline/seed.py` (SHA-256 of date, season, model version) makes a re-run reproducible.
 
-Status: **not wired into `build_odds.py` or `odds.json`** (the shape is unchanged; the softmax is still the headline). Constants live in `pipeline/config.py`; `MARGIN_PER_Z` was fitted once on 2026-11-08 to the softmax's title probabilities, with `python pipeline/calibrate_sim.py` (offline script). Evidence and the comparison with the softmax on 26 seasons: `docs/simulation-report.md` (the simulation is indistinguishable from the softmax out of sample). `pipeline/schedule.py` reads whole monthly results pages (played and unplayed games, regular season / play-in / playoffs).
+Status: **runs in the daily build in shadow mode** (since Nov 8, 2026): its numbers are published in additive fields (section 7), and the softmax is still the headline; the site does not display them. Strength uses the composite **before** the penalties (`config.SIM_USES_PENALTIES = False`; the simulation models seeding itself), and the schedule is every unplayed regular-season game on the monthly results pages from the current month through April (`pipeline/sim_inputs.py`). Constants live in `pipeline/config.py`; `MARGIN_PER_Z` was fitted once on 2026-11-08 to the softmax's title probabilities, with `python pipeline/calibrate_sim.py` (offline script). Evidence and the comparison with the softmax on 26 seasons: `docs/simulation-report.md` (the simulation is indistinguishable from the softmax out of sample). `pipeline/schedule.py` reads whole monthly results pages (played and unplayed games, regular season / play-in / playoffs).
 
 ### 6.5 Backtest (Phase 6)
 
@@ -156,6 +156,7 @@ Status: **not wired into `build_odds.py` or `odds.json`** (the shape is unchange
               "star_availability": 0.10, "core_net_rating": 0.10,
               "rotation_availability": 0.05, "clutch": 0.02},
   "history_dates": ["2026-11-07", "2026-11-08"],
+  "sim": {"runs": 20000, "seed_date": "2026-11-08", "mode": "regular_season", "margin_per_z": 3.3},
   "teams": [
     {
       "id": "SAS",
@@ -166,6 +167,8 @@ Status: **not wired into `build_odds.py` or `odds.json`** (the shape is unchange
       "rank": 1,
       "prob_change_1d": 0.004,
       "history": [0.217, 0.221],
+      "sim_prob": 0.205,
+      "sim": {"finals": 0.31, "conf_finals": 0.52, "make_playoffs": 0.97, "seed_avg": 2.4},
       "composite": 1.42,
       "inputs": {
         "net_rating":        {"value": 7.1,  "z": 1.6, "percentile": 94, "contribution": 0.61},
@@ -177,7 +180,9 @@ Status: **not wired into `build_odds.py` or `odds.json`** (the shape is unchange
 }
 ```
 
-Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_prob`; missing inputs are `null` and excluded from the contribution total; file under 100 KB. All 7 input keys always appear: dropped inputs (`core_net_rating`, `clutch`) have weight `0.0` and are `null` for every team, and the site hides them. `history_dates` (top level) and `history` (per team) hold the last up to 30 daily `title_prob` values, oldest first, with matching UTC dates (`YYYY-MM-DD`, strictly increasing, same length as every team's `history`). The previous `odds.json` is the only source: its history is carried forward and today's value is added; a second run on the same UTC date overwrites that date's entry; missed days stay as gaps (no backfill). History starts fresh (just today) when the previous file is missing, unreadable, sample data, or from a different `model_version`. A previous real file without history is bootstrapped once: its own date (from `generated_at`) and `title_prob` values seed the history. `prob_change_1d` is today's value minus the value on the most recent earlier date in `history`, and is `null` if that date is more than 3 days back or there is none. Validation of these fields runs only when they are present, so older files still pass. Each team has at most 4 `notes`. The schema may grow, but fields above can't be removed or renamed without updating the pipeline, site, and tests together.
+Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_prob`; missing inputs are `null` and excluded from the contribution total; file under 100 KB. All 7 input keys always appear: dropped inputs (`core_net_rating`, `clutch`) have weight `0.0` and are `null` for every team, and the site hides them. `history_dates` (top level) and `history` (per team) hold the last up to 30 daily `title_prob` values, oldest first, with matching UTC dates (`YYYY-MM-DD`, strictly increasing, same length as every team's `history`). The previous `odds.json` is the only source: its history is carried forward and today's value is added; a second run on the same UTC date overwrites that date's entry; missed days stay as gaps (no backfill). History starts fresh (just today) when the previous file is missing, unreadable, sample data, or from a different `model_version`. A previous real file without history is bootstrapped once: its own date (from `generated_at`) and `title_prob` values seed the history. `prob_change_1d` is today's value minus the value on the most recent earlier date in `history`, and is `null` if that date is more than 3 days back or there is none. Validation of these fields runs only when they are present, so older files still pass. Each team has at most 4 `notes`.
+
+**Simulation fields (shadow mode, additive).** `sim_prob` (per team) is the title probability from the playoff simulation (section 6.4), rounded with `model.round_probs` so the 30 values sum to exactly 1.0. Per-team `sim` holds `finals`, `conf_finals` and `make_playoffs` (shares of simulated seasons, in [0, 1], 4 decimals) and `seed_avg` (average playoff seed in the runs where the team made the playoffs, 2 decimals, between 1 and 15; `null` if it never did). Top-level `sim` holds `runs` (a positive integer), `seed_date` (the UTC date that seeds the random numbers, so a same-day rerun gives the same numbers), `mode` (`"regular_season"`) and `margin_per_z`. **The headline fields (`title_prob`, `rank`, `composite`, `inputs`, `prob_change_1d`, `history`) are unchanged and still come from the softmax; the site does not show the sim fields yet.** The sim fields are optional: they are absent on days the simulation stage failed (section 9), and validation of them runs only when present. The file should stay under about 50 KB (the hard limit is 100 KB). The schema may grow, but fields above can't be removed or renamed without updating the pipeline, site, and tests together.
 
 ---
 
@@ -200,7 +205,8 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 - **Steps:** check out the repo → set up Python → install requirements → run tests → run `build_odds.py` → if `odds.json` changed, commit and push to `main`.
 - **Failure behavior:** the job fails visibly (email from GitHub) and leaves the last good `odds.json` in place. Never commit a file that fails validation.
 - **Permissions:** the workflow needs `contents: write` to push the update.
-- **Cache:** raw pulls cached to avoid hammering sources and to stay under rate limits. A run makes about 8 to 10 requests (ratings for this and last season, player pages for three seasons, injuries, and 1 to 3 monthly results pages), one every 4 seconds, so it takes about 30 seconds; Actions starts each run with an empty cache.
+- **Cache:** raw pulls cached to avoid hammering sources and to stay under rate limits. A run makes about 13 to 16 requests in November and fewer later in the season (ratings for this and last season, player pages for three seasons, injuries, 1 to 3 monthly results pages for recent form, plus the monthly pages from the current month through April for the remaining schedule; the current month's page is shared and fetched once), one every 4 seconds, so it takes about 1 minute; `MAX_REQUESTS` stays 20; Actions starts each run with an empty cache.
+- **Failure isolation for the simulation (shadow mode):** the simulation is optional. If anything in that stage fails (a schedule page cannot be fetched or read, the site blocks us, the simulator raises, the sanity checks fail), the build still publishes the normal softmax odds without the `sim` fields and prints one `WARNING` line to stderr (visible in the Action log). A block (403/429/bot check) during the schedule fetches stops all further requests but keeps the odds already computed. Failures in the required model pages (ratings, players, injuries, recent form) still fail the whole run and keep the previous file.
 - **Nothing to do:** before the season starts, and after the regular season ends, the build exits successfully without changing the file (playoff odds come in Phase 7).
 - **Checks before writing:** 30 teams, enough players per team, no NaN, the SPEC contract (`pipeline/validate.py`), and no team's title probability moving more than 15 points in one update. The file is written to a temporary name and swapped in.
 
@@ -270,6 +276,7 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 | Nov 8, 2026 | `prob_change_1d` is null on the first real run, then compares with the previous committed file (real history is Phase 7) |
 | Nov 8, 2026 | Phase 7: odds history lives inside `odds.json` (`history_dates` plus a per-team `history`, last 30 days, carried forward from the previous file; no separate history file); `prob_change_1d` now comes from it and is null if the earlier entry is more than 3 days old |
 | Nov 8, 2026 | Phase 7 (offline part): playoff simulation built in `pipeline/sim.py` with `MARGIN_PER_Z = 3.3` fitted to today's softmax; 26-season backtest shows it indistinguishable from the softmax (log loss 1.84 vs 1.91, s.e. of the difference 0.07). Not live; headline stays the softmax until the owner decides (`docs/simulation-report.md`) |
+| Nov 8, 2026 | Shadow mode: the playoff simulation runs in the daily build and is published in new fields only (`sim_prob`, `sim`); the softmax stays the headline. The simulation's strength uses the composite before penalties (`SIM_USES_PENALTIES = False`), since it models seeding itself. The headline switches only after at least two weeks of comparison and the owner's decision |
 
 ## 14. Open questions
 

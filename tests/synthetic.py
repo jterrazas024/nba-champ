@@ -58,8 +58,11 @@ def injuries_page() -> str:
     return table("injuries", ["Player", "Team", "Update", "Description"], rows)
 
 
-def games_page(start: date, days: int, skip_team: str | None = None) -> str:
-    """`days` days of games starting at `start`: every team plays once a day (circle method)."""
+def games_page(start: date, days: int, skip_team: str | None = None, extra_rows: list | None = None) -> str:
+    """`days` days of games starting at `start`: every team plays once a day (circle method).
+
+    `extra_rows` (already-built table rows, e.g. unplayed games) are appended to the page.
+    """
     ids = [t.id for t in TEAMS]
     rows = []
     for d in range(days):
@@ -72,35 +75,76 @@ def games_page(start: date, days: int, skip_team: str | None = None) -> str:
             margin = round((STRENGTH[home] - STRENGTH[away]) / 4) + 3
             rows.append([f"{day:%a, %b} {day.day}, {day.year}", config.TEAM_BY_ID[away].name, str(100),
                          config.TEAM_BY_ID[home].name, str(100 + margin), ""])
+    rows += extra_rows or []
     return table("schedule", ["Date", "Visitor/Neutral", "PTS", "Home/Neutral", "PTS.1", "Notes"], rows)
+
+
+MONTH_NAMES = {10: "october", 11: "november", 12: "december", 1: "january", 2: "february", 3: "march", 4: "april"}
+
+
+def future_rows_by_month(games: int, end_year: int) -> dict[str, list[list[str]]]:
+    """Unplayed games (no score) for the rest of the season, as table rows grouped by month name.
+
+    Each team has 82 - `games` games left: one "day" per remaining game (everyone plays once), spread
+    from the day after the last played game to April 10 of `end_year`.
+    """
+    last = date(end_year - 1, 10, 20) + timedelta(days=games - 1) if games <= 12 else date(end_year - 1, 11, 1) + timedelta(days=games - 13)
+    first, end = last + timedelta(days=1), date(end_year, 4, 10)
+    slots = 82 - games
+    ids = [t.id for t in TEAMS]
+    by_month: dict[str, list[list[str]]] = {}
+    for k in range(slots):
+        day = first + timedelta(days=(k * (end - first).days) // max(slots - 1, 1))
+        rotated = ids[k % 30:] + ids[:k % 30]
+        for j in range(15):
+            home, away = rotated[j], rotated[29 - j]
+            by_month.setdefault(MONTH_NAMES[day.month], []).append(
+                [f"{day:%a, %b} {day.day}, {day.year}", config.TEAM_BY_ID[away].name, "", config.TEAM_BY_ID[home].name, "", ""])
+    return by_month
 
 
 def league_pages(games: int = 24, skip_form_team: str | None = None, players_per_team: int = PLAYERS_PER_TEAM,
                  end_year: int = 2027) -> dict[str, str]:
-    """Every page a build asks for, keyed by path. `games` is how many each team has played."""
-    return {
+    """Every page a build asks for, keyed by path. `games` is how many each team has played.
+
+    Includes the monthly results pages for the rest of the season (unplayed games, no scores), which the
+    shadow-mode simulation reads; the current month's page holds both played and unplayed games.
+    """
+    future = future_rows_by_month(games, end_year)
+    pages = {
         f"/leagues/NBA_{end_year}.html": ratings_page(games),
         f"/leagues/NBA_{end_year - 1}.html": ratings_page(82),
         f"/leagues/NBA_{end_year}_advanced.html": players_page(games, True, players_per_team),
         f"/leagues/NBA_{end_year - 1}_advanced.html": players_page(82, False),
         f"/leagues/NBA_{end_year - 2}_advanced.html": players_page(82, False),
         "/friv/injuries.fcgi": injuries_page(),
-        f"/leagues/NBA_{end_year}_games-october.html": games_page(date(2026, 10, 20), min(games, 12), skip_form_team),
-        f"/leagues/NBA_{end_year}_games-november.html": games_page(date(2026, 11, 1), max(0, games - 12) or 1, skip_form_team),
+        f"/leagues/NBA_{end_year}_games-october.html": games_page(date(2026, 10, 20), min(games, 12), skip_form_team, future.pop("october", None)),
+        f"/leagues/NBA_{end_year}_games-november.html": games_page(date(2026, 11, 1), max(0, games - 12) or 1, skip_form_team, future.pop("november", None)),
     }
+    for month, rows in future.items():
+        pages[f"/leagues/NBA_{end_year}_games-{month}.html"] = table(
+            "schedule", ["Date", "Visitor/Neutral", "PTS", "Home/Neutral", "PTS.1", "Notes"], rows)
+    return pages
 
 
 class FakeClient:
-    """Stands in for BRClient: serves pages from a dict and records what was asked for."""
+    """Stands in for BRClient: serves pages from a dict and records what was asked for.
+
+    Like the real client, a page asked for twice (same cache name) is served from the cache and
+    counts as one request.
+    """
 
     def __init__(self, pages: dict[str, str]):
         self.pages = pages
         self.paths: list[str] = []
         self.requests_made = 0
+        self._seen: set[str] = set()
 
     def get_html(self, path: str, cache_name: str) -> str:
-        self.paths.append(path)
-        self.requests_made += 1
+        if cache_name not in self._seen:
+            self._seen.add(cache_name)
+            self.paths.append(path)
+            self.requests_made += 1
         return self.pages[path]
 
 

@@ -2,6 +2,7 @@
 import json
 from datetime import date
 
+import pandas as pd
 import pytest
 
 from pipeline import build_odds, config
@@ -50,8 +51,12 @@ def test_it_asks_for_exactly_the_pages_it_needs_and_stops_reading_months_early(b
     assert sorted(client.paths) == sorted([
         "/leagues/NBA_2027.html", "/leagues/NBA_2026.html",
         "/leagues/NBA_2027_advanced.html", "/leagues/NBA_2026_advanced.html", "/leagues/NBA_2025_advanced.html",
-        "/friv/injuries.fcgi", "/leagues/NBA_2027_games-november.html", "/leagues/NBA_2027_games-october.html"])
-    assert client.requests_made == 8
+        "/friv/injuries.fcgi", "/leagues/NBA_2027_games-november.html", "/leagues/NBA_2027_games-october.html",
+        # the remaining schedule for the simulation: December through April (November is shared)
+        "/leagues/NBA_2027_games-december.html", "/leagues/NBA_2027_games-january.html",
+        "/leagues/NBA_2027_games-february.html", "/leagues/NBA_2027_games-march.html",
+        "/leagues/NBA_2027_games-april.html"])
+    assert client.requests_made == 13 <= config.MAX_REQUESTS
 
 
 def test_dropped_inputs_are_null_and_weights_sum_to_one(built):
@@ -267,8 +272,6 @@ def test_gaps_are_left_as_gaps_and_the_change_respects_the_three_day_limit(built
 def test_history_is_capped_at_30_days_and_the_file_stays_small(built):
     odds, day = built[1].odds, TODAY
     pages = league_pages()
-    for month in ("december", "january"):   # later months reuse the November page (only the dates in it matter)
-        pages[f"/leagues/NBA_2027_games-{month}.html"] = pages["/leagues/NBA_2027_games-november.html"]
     for _ in range(35):
         day = date.fromordinal(day.toordinal() + 1)
         odds = build(FakeClient(pages), day, odds).odds
@@ -379,3 +382,143 @@ def test_may_and_june_have_their_own_pages():
     client = _never_enough_games_client(list(build_odds.SEASON_MONTHS))
     build_odds.fetch_recent_games(client, 2027, date(2027, 5, 20), [t.id for t in config.TEAMS])
     assert client.paths[0].endswith("may.html")
+
+
+# ---------- the playoff simulation in shadow mode (SPEC.md sections 6.4, 7, 9) ----------
+
+HEADLINE_TEAM_KEYS = ("id", "name", "conference", "record", "title_prob", "rank", "prob_change_1d", "history",
+                      "composite", "inputs", "notes")
+
+
+def _headline(odds: dict) -> str:
+    """Everything the site shows today, as one string: the file without the sim fields and the timestamp."""
+    top = {k: v for k, v in odds.items() if k not in ("sim", "generated_at")}
+    top["teams"] = [{k: v for k, v in t.items() if k not in ("sim", "sim_prob")} for t in odds["teams"]]
+    return json.dumps(top, sort_keys=True)
+
+
+@pytest.fixture(scope="module")
+def plain():
+    """The same build with the simulation switched off."""
+    return build(FakeClient(league_pages()), TODAY, None, with_sim=False).odds
+
+
+def test_sim_fields_are_present_and_valid(built):
+    odds = built[1].odds
+    assert validate_odds(odds) == []
+    assert odds["sim"]["mode"] == "regular_season" and odds["sim"]["seed_date"] == "2026-11-08"
+    assert odds["sim"]["runs"] == 400 and odds["sim"]["margin_per_z"] == config.MARGIN_PER_Z
+    assert sum(t["sim_prob"] for t in odds["teams"]) == pytest.approx(1.0, abs=1e-9)
+    for t in odds["teams"]:
+        assert set(t["sim"]) == {"finals", "conf_finals", "make_playoffs", "seed_avg"}
+        assert 0 <= t["sim"]["finals"] <= t["sim"]["conf_finals"] <= t["sim"]["make_playoffs"] <= 1
+        assert t["sim"]["seed_avg"] is None or 1 <= t["sim"]["seed_avg"] <= 8
+    assert len(json.dumps(odds, indent=1).encode()) < 50 * 1024
+
+
+def test_the_headline_is_byte_identical_with_or_without_the_simulation(built, plain):
+    assert _headline(built[1].odds) == _headline(plain)
+    assert "sim" not in plain and all("sim_prob" not in t for t in plain["teams"])
+
+
+def test_the_strong_teams_have_the_highest_sim_prob(built):
+    ranked = sorted(built[1].odds["teams"], key=lambda t: -t["sim_prob"])
+    strong = {t.id for t in config.TEAMS[22:]}                 # the 8 strongest synthetic teams
+    assert ranked[0]["id"] in strong
+    assert sum(t["sim_prob"] for t in ranked if t["id"] in strong) > 0.7
+    assert ranked[-1]["id"] in {t.id for t in config.TEAMS[:8]}
+
+
+def test_same_day_reruns_give_identical_simulation_numbers(built):
+    again = _odds_for(TODAY)
+    assert [t["sim_prob"] for t in again["teams"]] == [t["sim_prob"] for t in built[1].odds["teams"]]
+    assert [t["sim"] for t in again["teams"]] == [t["sim"] for t in built[1].odds["teams"]]
+
+
+def test_a_different_date_gives_different_simulation_numbers(built):
+    other = _odds_for(date(2026, 11, 9))
+    assert other["sim"]["seed_date"] == "2026-11-09"
+    assert [t["sim_prob"] for t in other["teams"]] != [t["sim_prob"] for t in built[1].odds["teams"]]
+
+
+def test_the_penalty_flag_changes_the_strength_the_simulation_uses(monkeypatch):
+    seen = []
+    real = build_odds.sim.league_from_frames
+
+    def spy(ratings_pts, *args, **kwargs):
+        seen.append(ratings_pts.copy())
+        return real(ratings_pts, *args, **kwargs)
+
+    monkeypatch.setattr(build_odds.sim, "league_from_frames", spy)
+    odds_off = _odds_for(TODAY, games=30)
+    monkeypatch.setattr(config, "SIM_USES_PENALTIES", True)
+    odds_on = _odds_for(TODAY, games=30)
+    assert len(seen) == 2 and "sim" in odds_off and "sim" in odds_on
+    composites = pd.Series({t["id"]: t["composite"] for t in odds_off["teams"]})   # published composite = after penalties
+    assert (seen[1] / config.MARGIN_PER_Z - composites).abs().max() < 1e-3          # flag on: the published (after-penalty) composite
+    assert (seen[0] - seen[1]).abs().max() > 0                                      # flag off: strength differs (penalties were applied)
+    assert _headline(odds_off) == _headline(odds_on)
+
+
+def _warns(capsys) -> list[str]:
+    return [line for line in capsys.readouterr().err.splitlines() if line.startswith("WARNING")]
+
+
+def test_a_simulator_error_still_publishes_the_standard_odds(plain, monkeypatch, capsys):
+    def boom(*args, **kwargs):
+        raise RuntimeError("the simulator broke")
+
+    monkeypatch.setattr(build_odds.sim, "simulate", boom)
+    odds = build(FakeClient(league_pages()), TODAY, None).odds
+    assert _headline(odds) == _headline(plain) and "sim" not in odds
+    assert all("sim_prob" not in t and "sim" not in t for t in odds["teams"])
+    assert validate_odds(odds) == []
+    warnings = _warns(capsys)
+    assert len(warnings) == 1 and "the simulator broke" in warnings[0]
+
+
+def test_a_missing_schedule_page_still_publishes_the_standard_odds(plain, capsys):
+    pages = league_pages()
+    del pages["/leagues/NBA_2027_games-february.html"]
+    odds = build(FakeClient(pages), TODAY, None).odds
+    assert json.dumps(odds, sort_keys=True).count("sim_prob") == 0
+    assert _headline(odds) == _headline(plain)
+    assert len(_warns(capsys)) == 1
+
+
+def test_a_partial_schedule_fails_the_sanity_check_and_skips_the_simulation(plain, capsys):
+    pages = league_pages()
+    pages["/leagues/NBA_2027_games-april.html"] = pages["/leagues/NBA_2027_games-march.html"]   # wrong page: games counted twice
+    odds = build(FakeClient(pages), TODAY, None).odds
+    assert "sim" not in odds and _headline(odds) == _headline(plain)
+    warnings = _warns(capsys)
+    assert len(warnings) == 1 and "remaining schedule" in warnings[0]
+
+
+def test_a_blocked_schedule_fetch_keeps_the_odds_and_stops_further_requests(plain, capsys):
+    class BlockedAfterModelPages(FakeClient):
+        """Serves the model pages, then the site blocks us on the first extra month and refuses all after."""
+
+        def get_html(self, path, cache_name):
+            if self.blocked or (path.endswith("games-december.html")):
+                self.blocked = True
+                self.refused += 1
+                raise Blocked("fetch: HTTP 403 (blocked); stopping, not retrying")
+            return super().get_html(path, cache_name)
+
+        blocked = False
+        refused = 0
+
+    client = BlockedAfterModelPages(league_pages())
+    odds = build(client, TODAY, None).odds
+    assert "sim" not in odds and _headline(odds) == _headline(plain)
+    assert client.refused == 1 and not any("january" in p for p in client.paths)   # nothing more was asked for
+    warnings = _warns(capsys)
+    assert len(warnings) == 1 and "blocked" in warnings[0].lower()
+
+
+def test_run_writes_a_file_with_sim_fields_and_main_message_mentions_it(tmp_path):
+    out = tmp_path / "odds.json"
+    result = run(FakeClient(league_pages()), TODAY, out)
+    assert "sim" in json.loads(out.read_text()) and "with simulation" in result.message
+

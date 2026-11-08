@@ -54,4 +54,13 @@ def test_star_and_availability_weights_sum_to_one():
 
 def test_simulation_constants_are_sensible():
     assert config.MARGIN_PER_Z > 0 and config.HOME_COURT_POINTS >= 0 and config.GAME_LOGISTIC_SCALE > 0
-    assert config.SIM_RUNS >= 1000 and config.RATING_UNCERTAINTY_POINTS >= 0
+    assert config.RATING_UNCERTAINTY_POINTS >= 0
+
+
+def test_production_simulation_run_count_is_in_the_config_file():
+    """tests/conftest.py lowers config.SIM_RUNS for speed, so check the value written in the file."""
+    import re
+    from pathlib import Path
+    source = (Path(config.__file__)).read_text()
+    assert int(re.search(r"^SIM_RUNS = (\d+)", source, re.M).group(1)) == 20000
+    assert config.SIM_USES_PENALTIES is False

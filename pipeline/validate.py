@@ -51,6 +51,7 @@ def validate_odds(odds: dict) -> list[str]:
         problems.append("rank 1 must have the highest title_prob, and so on down")
 
     problems += _check_history(odds)
+    problems += check_sim(odds)
 
     if len(json.dumps(odds, indent=1).encode()) >= MAX_BYTES:
         problems.append("file would be 100 KB or larger")
@@ -86,4 +87,40 @@ def _check_history(odds: dict) -> list[str]:
             problems.append(f"{team.get('id')} history length does not match history_dates")
         elif not all(isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 1 for v in history):
             problems.append(f"{team.get('id')} history values must be numbers between 0 and 1")
+    return problems
+
+
+def check_sim(odds: dict) -> list[str]:
+    """Checks for the optional simulation fields (SPEC.md section 7, shadow mode): per-team `sim_prob` and
+    `sim`, and the top-level `sim`. They only run when those fields are present."""
+    problems: list[str] = []
+    top = odds.get("sim")
+    if top is not None:
+        runs = top.get("runs") if isinstance(top, dict) else None
+        if not isinstance(runs, int) or isinstance(runs, bool) or runs <= 0:
+            problems.append("sim.runs must be a positive integer")
+    def number(v) -> bool:
+        return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+    probs = []
+    for team in odds["teams"]:
+        tid = team.get("id")
+        if "sim_prob" in team:
+            p = team["sim_prob"]
+            if not number(p) or not 0 <= p <= 1:
+                problems.append(f"{tid} sim_prob must be a number between 0 and 1")
+            else:
+                probs.append(p)
+        detail = team.get("sim")
+        if detail is None:
+            continue
+        for key in ("finals", "conf_finals", "make_playoffs"):
+            v = detail.get(key) if isinstance(detail, dict) else None
+            if not number(v) or not 0 <= v <= 1:
+                problems.append(f"{tid} sim.{key} must be a number between 0 and 1")
+        seed_avg = detail.get("seed_avg") if isinstance(detail, dict) else None
+        if seed_avg is not None and (not number(seed_avg) or not 1 <= seed_avg <= 15):
+            problems.append(f"{tid} sim.seed_avg must be null or a number between 1 and 15")
+    if probs and (len(probs) != len(odds["teams"]) or abs(sum(probs) - 1.0) > 1e-6):
+        problems.append(f"sim_prob values sum to {sum(probs):.6f} over {len(probs)} teams, not 1.0 over every team")
     return problems

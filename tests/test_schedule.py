@@ -73,3 +73,17 @@ def test_every_cached_april_page_parses(path):
     if (games["stage"] == "playoffs").any():                              # the 2021 April page ends before the play-in
         assert games.loc[games["stage"] == "regular", "date"].max() <= games.loc[games["stage"] == "playoffs", "date"].min()
     assert (games["stage"] == "playin").sum() == (6 if year >= 2022 else 0)
+
+
+def test_unplayed_regular_games_drops_played_games_and_the_cup_final():
+    from pipeline.sim_inputs import unplayed_regular_games
+    from tests.synthetic import table
+    head = ["Date", "Visitor/Neutral", "PTS", "Home/Neutral", "PTS.1", "Notes"]
+    page = table("schedule", head, [
+        ["Mon, Nov 2, 2026", "Boston Celtics", "100", "Atlanta Hawks", "99", ""],
+        ["Tue, Nov 3, 2026", "Boston Celtics", "", "Atlanta Hawks", "", ""],
+        ["Sat, Dec 12, 2026", "Boston Celtics", "", "Atlanta Hawks", "", "NBA Cup Final"],
+        ["Sun, Dec 6, 2026", "Boston Celtics", "", "Atlanta Hawks", "", "NBA Cup Semifinals"],
+    ])
+    games = unplayed_regular_games([page])
+    assert len(games) == 2 and set(games["home_id"]) == {"ATL"}
