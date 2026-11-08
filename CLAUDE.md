@@ -20,10 +20,10 @@ A live website that shows each NBA team's probability of winning the 2026-27 cha
 
 ## Commands
 
-(Fill in as they are created.)
-
-- Install: `pip install -r requirements.txt`
-- Build odds: `python pipeline/build_odds.py`
+- Install: `pip install -r requirements.txt` (inside the virtual environment: `python3.12 -m venv .venv`, then use `.venv/bin/python` and `.venv/bin/pytest`)
+- Refresh timestamp (Phase 2 stand-in, run daily by the Action): `python pipeline/refresh_timestamp.py`
+- Build odds (Phase 4, not written yet): `python pipeline/build_odds.py`
+- Run the refresh Action by hand: `gh workflow run refresh.yml`, then `gh run list --workflow refresh.yml`
 - Run tests: `pytest`
 - Preview site: `python -m http.server 8000` then open http://localhost:8000
   (opening `index.html` by double-click will not load `odds.json` because of browser rules, so use the local server)
