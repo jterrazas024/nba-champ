@@ -27,7 +27,7 @@ function ordinal(n) {
   return n + ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th");
 }
 
-// Change since yesterday, in percentage points, e.g. "▲ 0.4".
+// Change since the last update (up to 3 days back), in percentage points, e.g. "▲ 0.4".
 function formatChange(delta) {
   const points = Math.abs(delta * 100).toFixed(1);
   if (Number(points) === 0) return { text: "–", cls: "" };
@@ -203,7 +203,7 @@ function renderKpis() {
 
   const hero = tile("Favorite", fmtPct1(first.title_prob), first.name, true);
   const changeEl = el("span", "change " + change.cls, change.text);
-  changeEl.title = "Change since yesterday, in percentage points";
+  changeEl.title = "Change vs the last update (up to 3 days back), in percentage points";
   hero.lastChild.appendChild(changeEl);
   box.appendChild(hero);
   box.appendChild(tile("Top 3 combined", fmtPct1(top3), state.teams.slice(0, 3).map((t) => t.id).join(" · ")));
@@ -390,7 +390,7 @@ function renderTable(body, tab) {
     const metric = METRICS[key];
     const isOdds = key === "title_prob";
     columns.push("#", "Team", metric.label);
-    columns.push(isOdds ? "Since yesterday" : "Percentile");
+    columns.push(isOdds ? "Change" : "Percentile");
     const anySpark = isOdds && state.teams.some((t) => teamSparkline(t));
     if (anySpark) columns.push("Trend");
     rows = barRows(key).map((r, i) => {
@@ -461,7 +461,7 @@ function renderDetail() {
   const change = formatChange(team.prob_change_1d || 0);
   const side = el("div", "detail-side");
   side.appendChild(el("span", "detail-rank", "Rank " + team.rank + " of " + state.teams.length));
-  const changeEl = el("span", "change " + change.cls, change.text + (change.text === "–" ? "" : " pts today"));
+  const changeEl = el("span", "change " + change.cls, change.text + (change.text === "–" ? "" : " pts vs last update"));
   side.appendChild(changeEl);
   figures.appendChild(side);
   box.appendChild(figures);
