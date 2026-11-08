@@ -36,6 +36,46 @@ def season_label(end_year: int) -> str:
     return f"{end_year - 1}-{str(end_year)[-2:]}"
 
 
+# ---- Model inputs and weights (SPEC.md section 6; decisions in section 13) ----
+INPUT_KEYS = ("net_rating", "star_power", "recent_form", "star_availability",
+              "core_net_rating", "rotation_availability", "clutch")
+
+# Starting weights as raw points. Clutch and core net rating have no usable data source (decided
+# Nov 8, 2026), so they are 0. The rest are renormalized to sum to 1.0: each of 38/25/10/10/5 over 88.
+WEIGHT_POINTS = {"net_rating": 38, "star_power": 25, "recent_form": 10, "star_availability": 10,
+                 "core_net_rating": 0, "rotation_availability": 5, "clutch": 0}
+
+
+def normalized_weights(points: dict[str, float]) -> dict[str, float]:
+    """Return the weights scaled so they sum to 1.0 (an input with 0 points keeps weight 0.0)."""
+    total = sum(points.values())
+    return {key: points[key] / total for key in INPUT_KEYS}
+
+
+WEIGHTS = normalized_weights(WEIGHT_POINTS)
+
+# Net rating (SPEC 6.1, 6.3): early in the season, lean on last season.
+PRIOR_BLEND_GAMES = 20     # weight on the current season = games / (games + 20)
+SOS_FULL_AT = 40           # schedule strength is phased in as min(1, games / 40): early SOS is noisy
+PRIOR_REGRESSION = 0.7     # last season's rating is pulled 30% of the way to the league mean
+
+# Star power (SPEC 6.1): the two best players by BPM who actually play.
+STAR_WEIGHTS = (0.6, 0.4)
+STAR_MIN_MPG = 15              # minimum minutes per game
+STAR_MIN_GAMES_FRAC = 0.4      # must have played at least 40% of the team's games...
+STAR_MIN_GAMES_FLOOR = 3       # ...but never fewer than 3...
+STAR_MIN_GAMES_CAP = 20        # ...and never more than 20 are required
+
+# Star availability (SPEC 6.1): games played over the last three seasons, most recent first.
+AVAILABILITY_SEASON_WEIGHTS = (0.5, 0.3, 0.2)
+INJURY_FACTORS = {"Out For Season": 0.25, "Out": 0.6, "Day To Day": 0.9}  # multiplies a star's availability
+DAY_TO_DAY_MAX_AGE_DAYS = 14   # an older "Day To Day" entry is treated as stale and ignored
+
+# Rotation availability and recent form (SPEC 6.1)
+ROTATION_SIZE = 9
+FORM_GAMES = 20
+FORM_MIN_GAMES = 5             # fewer finished games than this: recent form is "not available"
+
 # ---- Teams ----
 @dataclass(frozen=True)
 class Team:

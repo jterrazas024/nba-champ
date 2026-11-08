@@ -38,3 +38,15 @@ def test_team_table_matches_the_ids_and_names_the_site_uses():
     site = {t["id"]: (t["name"], t["conference"]) for t in odds["teams"]}
     mine = {t.id: (t.name, t.conference) for t in config.TEAMS}
     assert site == mine
+
+
+def test_weights_are_normalized_and_drop_unavailable_inputs():
+    assert abs(sum(config.WEIGHTS.values()) - 1.0) < 1e-12
+    assert config.WEIGHTS["clutch"] == 0.0 and config.WEIGHTS["core_net_rating"] == 0.0
+    assert config.WEIGHTS["net_rating"] == 38 / 88
+    assert set(config.WEIGHTS) == set(config.INPUT_KEYS)
+
+
+def test_star_and_availability_weights_sum_to_one():
+    assert abs(sum(config.STAR_WEIGHTS) - 1.0) < 1e-12
+    assert abs(sum(config.AVAILABILITY_SEASON_WEIGHTS) - 1.0) < 1e-12
