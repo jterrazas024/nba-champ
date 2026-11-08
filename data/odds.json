@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-08T05:24:54Z",
+ "generated_at": "2026-11-08T05:58:37Z",
  "season": "2026-27",
  "is_sample": false,
  "games_played_league_avg": 8.8,
@@ -14,6 +14,9 @@
   "rotation_availability": 0.056818181818181816,
   "clutch": 0.0
  },
+ "history_dates": [
+  "2026-11-08"
+ ],
  "teams": [
   {
    "id": "SAS",
@@ -23,6 +26,9 @@
    "title_prob": 0.179374,
    "rank": 1,
    "prob_change_1d": null,
+   "history": [
+    0.179374
+   ],
    "composite": 1.444,
    "inputs": {
     "net_rating": {
@@ -70,6 +76,9 @@
    "title_prob": 0.138106,
    "rank": 2,
    "prob_change_1d": null,
+   "history": [
+    0.138106
+   ],
    "composite": 1.287,
    "inputs": {
     "net_rating": {
@@ -117,6 +126,9 @@
    "title_prob": 0.07817,
    "rank": 3,
    "prob_change_1d": null,
+   "history": [
+    0.07817
+   ],
    "composite": 0.946,
    "inputs": {
     "net_rating": {
@@ -164,6 +176,9 @@
    "title_prob": 0.076096,
    "rank": 4,
    "prob_change_1d": null,
+   "history": [
+    0.076096
+   ],
    "composite": 0.93,
    "inputs": {
     "net_rating": {
@@ -211,6 +226,9 @@
    "title_prob": 0.070323,
    "rank": 5,
    "prob_change_1d": null,
+   "history": [
+    0.070323
+   ],
    "composite": 0.883,
    "inputs": {
     "net_rating": {
@@ -256,6 +274,9 @@
    "title_prob": 0.049122,
    "rank": 6,
    "prob_change_1d": null,
+   "history": [
+    0.049122
+   ],
    "composite": 0.667,
    "inputs": {
     "net_rating": {
@@ -303,6 +324,9 @@
    "title_prob": 0.046656,
    "rank": 7,
    "prob_change_1d": null,
+   "history": [
+    0.046656
+   ],
    "composite": 0.636,
    "inputs": {
     "net_rating": {
@@ -350,6 +374,9 @@
    "title_prob": 0.046377,
    "rank": 8,
    "prob_change_1d": null,
+   "history": [
+    0.046377
+   ],
    "composite": 0.633,
    "inputs": {
     "net_rating": {
@@ -397,6 +424,9 @@
    "title_prob": 0.0454,
    "rank": 9,
    "prob_change_1d": null,
+   "history": [
+    0.0454
+   ],
    "composite": 0.62,
    "inputs": {
     "net_rating": {
@@ -444,6 +474,9 @@
    "title_prob": 0.044053,
    "rank": 10,
    "prob_change_1d": null,
+   "history": [
+    0.044053
+   ],
    "composite": 0.602,
    "inputs": {
     "net_rating": {
@@ -491,6 +524,9 @@
    "title_prob": 0.033708,
    "rank": 11,
    "prob_change_1d": null,
+   "history": [
+    0.033708
+   ],
    "composite": 0.441,
    "inputs": {
     "net_rating": {
@@ -538,6 +574,9 @@
    "title_prob": 0.032884,
    "rank": 12,
    "prob_change_1d": null,
+   "history": [
+    0.032884
+   ],
    "composite": 0.426,
    "inputs": {
     "net_rating": {
@@ -585,6 +624,9 @@
    "title_prob": 0.02351,
    "rank": 13,
    "prob_change_1d": null,
+   "history": [
+    0.02351
+   ],
    "composite": 0.225,
    "inputs": {
     "net_rating": {
@@ -632,6 +674,9 @@
    "title_prob": 0.015664,
    "rank": 14,
    "prob_change_1d": null,
+   "history": [
+    0.015664
+   ],
    "composite": -0.019,
    "inputs": {
     "net_rating": {
@@ -679,6 +724,9 @@
    "title_prob": 0.015428,
    "rank": 15,
    "prob_change_1d": null,
+   "history": [
+    0.015428
+   ],
    "composite": -0.028,
    "inputs": {
     "net_rating": {
@@ -726,6 +774,9 @@
    "title_prob": 0.015024,
    "rank": 16,
    "prob_change_1d": null,
+   "history": [
+    0.015024
+   ],
    "composite": -0.044,
    "inputs": {
     "net_rating": {
@@ -775,6 +826,9 @@
    "title_prob": 0.014569,
    "rank": 17,
    "prob_change_1d": null,
+   "history": [
+    0.014569
+   ],
    "composite": -0.062,
    "inputs": {
     "net_rating": {
@@ -820,6 +874,9 @@
    "title_prob": 0.013425,
    "rank": 18,
    "prob_change_1d": null,
+   "history": [
+    0.013425
+   ],
    "composite": -0.111,
    "inputs": {
     "net_rating": {
@@ -867,6 +924,9 @@
    "title_prob": 0.012794,
    "rank": 19,
    "prob_change_1d": null,
+   "history": [
+    0.012794
+   ],
    "composite": -0.14,
    "inputs": {
     "net_rating": {
@@ -914,6 +974,9 @@
    "title_prob": 0.009674,
    "rank": 20,
    "prob_change_1d": null,
+   "history": [
+    0.009674
+   ],
    "composite": -0.308,
    "inputs": {
     "net_rating": {
@@ -961,6 +1024,9 @@
    "title_prob": 0.009375,
    "rank": 21,
    "prob_change_1d": null,
+   "history": [
+    0.009375
+   ],
    "composite": -0.327,
    "inputs": {
     "net_rating": {
@@ -1009,6 +1075,9 @@
    "title_prob": 0.005132,
    "rank": 22,
    "prob_change_1d": null,
+   "history": [
+    0.005132
+   ],
    "composite": -0.688,
    "inputs": {
     "net_rating": {
@@ -1056,6 +1125,9 @@
    "title_prob": 0.004453,
    "rank": 23,
    "prob_change_1d": null,
+   "history": [
+    0.004453
+   ],
    "composite": -0.773,
    "inputs": {
     "net_rating": {
@@ -1103,6 +1175,9 @@
    "title_prob": 0.00426,
    "rank": 24,
    "prob_change_1d": null,
+   "history": [
+    0.00426
+   ],
    "composite": -0.8,
    "inputs": {
     "net_rating": {
@@ -1151,6 +1226,9 @@
    "title_prob": 0.003211,
    "rank": 25,
    "prob_change_1d": null,
+   "history": [
+    0.003211
+   ],
    "composite": -0.969,
    "inputs": {
     "net_rating": {
@@ -1198,6 +1276,9 @@
    "title_prob": 0.003205,
    "rank": 26,
    "prob_change_1d": null,
+   "history": [
+    0.003205
+   ],
    "composite": -0.97,
    "inputs": {
     "net_rating": {
@@ -1245,6 +1326,9 @@
    "title_prob": 0.003073,
    "rank": 27,
    "prob_change_1d": null,
+   "history": [
+    0.003073
+   ],
    "composite": -0.996,
    "inputs": {
     "net_rating": {
@@ -1292,6 +1376,9 @@
    "title_prob": 0.002583,
    "rank": 28,
    "prob_change_1d": null,
+   "history": [
+    0.002583
+   ],
    "composite": -1.1,
    "inputs": {
     "net_rating": {
@@ -1341,6 +1428,9 @@
    "title_prob": 0.002304,
    "rank": 29,
    "prob_change_1d": null,
+   "history": [
+    0.002304
+   ],
    "composite": -1.169,
    "inputs": {
     "net_rating": {
@@ -1389,6 +1479,9 @@
    "title_prob": 0.002047,
    "rank": 30,
    "prob_change_1d": null,
+   "history": [
+    0.002047
+   ],
    "composite": -1.24,
    "inputs": {
     "net_rating": {
