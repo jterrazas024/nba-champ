@@ -130,3 +130,16 @@ def test_complete_remaining_rejects_big_gaps_and_double_counted_pages():
         complete_remaining(_full_schedule(14), played, np.random.default_rng(1))     # a page counted twice: 2 over
     ok = complete_remaining(_full_schedule(13), played, np.random.default_rng(1))    # one over (the Cup final): left alone
     assert len(ok) == len(_full_schedule(13))
+
+
+def test_backtest_history_keeps_only_regular_season_games_on_pages_without_a_separator():
+    """The bug behind docs/simulation-report.md: play-in-era April pages have no "Playoffs" row, so playoff
+    and play-in games used to leak into the backtest's recent-form input."""
+    from pipeline.backtest.history import parse_regular_games
+    page = fixture("schedule_playin_era_sample.html")
+    names, _ = team_maps(2026)
+    assert parse_schedule(page, names)["stage"].tolist() == ["regular", "regular", "playin", "playin", "playoffs", "playoffs"]
+    games = parse_regular_games(page, names)
+    assert len(games) == 2
+    assert list(games.columns) == ["date", "away_id", "away_pts", "home_id", "home_pts", "notes"]
+    assert games[["away_pts", "home_pts"]].dtypes.map(lambda d: d.kind).eq("i").all()

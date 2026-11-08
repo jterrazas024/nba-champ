@@ -1,10 +1,12 @@
 # Simulation report (Phase 7, offline)
 
-The playoff simulation (`pipeline/sim.py`) is built and tested but **not yet used by the daily build**: `odds.json` still shows the softmax. This report is the evidence for deciding when, or whether, to make the simulation the headline. Code: `pipeline/calibrate_sim.py` (offline only, reads cached pages, no network). Rerun: `python pipeline/calibrate_sim.py`.
+The playoff simulation (`pipeline/sim.py`) is built and tested and now runs in the daily build in **shadow mode** (its numbers are published in separate `sim_prob` / `sim` fields; the headline in `odds.json` and on the site is still the softmax). This report is the evidence for deciding when, or whether, to make the simulation the headline. Code: `pipeline/calibrate_sim.py` (offline only, reads cached pages, no network). Rerun: `python pipeline/calibrate_sim.py`.
+
+> **Correction (Nov 8, 2026).** The numbers in section 3 were first computed with a backtest history loader that let about 40 playoff and play-in games per season into the recent-form input from 2021-22 on (see section 5). The loader is fixed and section 3 was recomputed: log losses moved by 0.01 for the simulation and 0.01 to 0.03 for the softmax, the paired differences moved by less than 0.01, and **no conclusion changed**. Section 2 (today's data) does not use the backtest and is unchanged.
 
 ## 1. What the simulation does
 
-Strength is `MARGIN_PER_Z x composite` (points of margin against an average team; the composite includes the live penalties). Each run draws a rating error per team (sd 3.0 points at 0 games, shrinking as `sqrt(20 / (games + 20))`), plays every remaining regular-season game with `p(home) = 1 / (1 + exp(-(r_home - r_away + 2.5) / 6.5))`, ranks each conference (random tie-breaks, a simplification), plays the 2020-21 play-in for seeds 7-10, then best-of-7 series with 2-2-1-1-1 home court through the Finals. Title probability is the share of 20,000 runs won, rounded so the 30 numbers sum to exactly 1.0. It can also start mid-series (`PlayoffState`). Runtime: a quarter of a second to a few seconds for 20,000 runs.
+Strength is `MARGIN_PER_Z x composite` (points of margin against an average team; the composite includes the live penalties; in the live build the simulation uses the composite before the penalties, a choice section 3's "no penalties" row supports). Each run draws a rating error per team (sd 3.0 points at 0 games, shrinking as `sqrt(20 / (games + 20))`), plays every remaining regular-season game with `p(home) = 1 / (1 + exp(-(r_home - r_away + 2.5) / 6.5))`, ranks each conference (random tie-breaks, a simplification), plays the 2020-21 play-in for seeds 7-10, then best-of-7 series with 2-2-1-1-1 home court through the Finals. Title probability is the share of 20,000 runs won, rounded so the 30 numbers sum to exactly 1.0. It can also start mid-series (`PlayoffState`). Runtime: a quarter of a second to a few seconds for 20,000 runs.
 
 ## 2. Today's data (2026-11-08): fitting `MARGIN_PER_Z`
 
@@ -33,19 +35,19 @@ The comparison is a sanity check and a calibration of scale, not a verdict: matc
 
 | Model | Log loss | Brier | Champion p (mean) | Top-1 | Top-3 | Top-5 | Median rank |
 |---|---|---|---|---|---|---|---|
-| Softmax, live (T=0.6) | 1.907 | 0.799 | 0.188 | 0.35 | 0.65 | 0.77 | 2 |
-| Softmax, live composite, T refit | 1.892 | 0.797 | 0.206 | 0.35 | 0.65 | 0.77 | 2 |
+| Softmax, live (T=0.6) | 1.919 | 0.802 | 0.186 | 0.27 | 0.65 | 0.77 | 2 |
+| Softmax, live composite, T refit | 1.907 | 0.802 | 0.204 | 0.27 | 0.65 | 0.77 | 2 |
 | Softmax, net rating only, T refit | 1.914 | 0.795 | 0.228 | 0.31 | 0.62 | 0.92 | 3 |
-| Simulation, live composite | 1.841 | 0.797 | 0.211 | 0.38 | 0.69 | 0.85 | 2 |
-| Simulation, no penalties | 1.815 | 0.779 | 0.232 | 0.42 | 0.69 | 0.85 | 2 |
+| Simulation, live composite | 1.849 | 0.798 | 0.209 | 0.35 | 0.69 | 0.85 | 2 |
+| Simulation, no penalties | 1.822 | 0.782 | 0.229 | 0.42 | 0.69 | 0.85 | 2 |
 | Simulation, net rating only | 1.772 | 0.791 | 0.235 | 0.31 | 0.69 | 0.92 | 3 |
 
 Paired per-season differences in log loss (negative = the simulation is better; s.e. is the standard error over 26 seasons):
-- Simulation vs the live softmax: **-0.066, s.e. 0.070**, better in 14 of 26 seasons.
-- Like for like with the same T-refit treatment: live composite **-0.051, s.e. 0.071** (11 of 26); net rating only **-0.142, s.e. 0.059** (16 of 26).
-- The best margin over all 26 seasons was 3.5 (leave-one-season-out picks ranged 3.0 to 4.0), close to the 3.3 fitted on today's data.
+- Simulation vs the live softmax: **-0.071, s.e. 0.070**, better in 14 of 26 seasons.
+- Like for like with the same T-refit treatment: live composite **-0.058, s.e. 0.071** (11 of 26); net rating only **-0.142, s.e. 0.059** (16 of 26).
+- The best margin over all 26 seasons was 3.0 with no rating uncertainty (3.5 in the first version of this report); leave-one-season-out picks ranged 3.0 to 4.0, close to the 3.3 fitted on today's data.
 
-**Reading.** The simulation is nominally better on every champion measure except Brier, which is a tie, but the gap for the live composite is about one standard error: **indistinguishable from the softmax on this evidence**. The one result near conventional significance (net rating only, about 2.4 s.e.) is one of several comparisons I looked at, so I would not lean on it. It is mildly encouraging that the structure (seeding, bracket, home court) does not hurt and may help when the inputs are the same. Dropping the penalties helped the simulation slightly (-0.092 vs the live softmax, again within noise), a hint that the penalties may double-count what the bracket already does; I did not change them.
+**Reading.** The simulation is nominally better on every champion measure except Brier, which is a tie, but the gap for the live composite is about one standard error: **indistinguishable from the softmax on this evidence**. The one result near conventional significance (net rating only, about 2.4 s.e.) is one of several comparisons I looked at, so I would not lean on it. It is mildly encouraging that the structure (seeding, bracket, home court) does not hurt and may help when the inputs are the same. Dropping the penalties helped the simulation slightly (-0.098 vs the live softmax, again within noise), a hint that the penalties may double-count what the bracket already does; I did not change them.
 
 Limits: 26 champions; no betting odds to compare against; record seeds and random tie-breaks instead of the real tie-break rules and division-winner seeding; the 2020 bubble is treated as a top-8 bracket seeded by record; end-of-season only (the simulation's early-season behavior, where it should differ most, is not scored here); backtest inputs have no injury report; strength comes from the same inputs the softmax uses, so this tests the *conversion* to probabilities, not the inputs.
 
@@ -57,4 +59,4 @@ Limits: 26 champions; no betting odds to compare against; record seeds and rando
 ## 5. Findings about the pages (for the playoff phase)
 
 - Up to the 2020 season, playoff games sit after a separator row reading "Playoffs". Since the play-in began there is no separator: play-in games carry the note "Play-In Game" and the playoff games after them are unmarked. `pipeline/schedule.py` assigns a stage by date for these pages.
-- The Phase 6 history loader (`regular_season_html`) only cuts at the separator, so in 2022-2026 the April pages' playoff games (about 40 per season) are included in the "last 20 games" recent-form input of the backtest. This affects Phase 6 numbers slightly and was **not** changed here.
+- The Phase 6 history loader (`regular_season_html`) only cuts at the separator, so in 2022-2026 the April pages' playoff games (about 40 per season) were included in the "last 20 games" recent-form input of the backtest. **Fixed on Nov 8, 2026** (the loader now uses `schedule.py`'s stage); `docs/backtest-report.md` and section 3 above were recomputed and no conclusion changed.

@@ -2,6 +2,8 @@
 
 Does the model's championship ranking hold up against history, and should its weights or temperature change? Short answer: the model is reasonable, the data cannot show a clear improvement, so **`pipeline/config.py` is unchanged**.
 
+> **Correction (Nov 8, 2026).** The first version of this report used a history loader that cut monthly pages only at the "Playoffs" separator row. Pages from 2021-22 on have no such row, so about 40 playoff and play-in games per season leaked into the recent-form input. The loader now uses `pipeline/schedule.py`'s stage detection (regular-season games only), a test covers it, and every number below was recomputed on the corrected data. **No conclusion changed**: the log-loss figures moved by 0.01 to 0.04, the recommendation is the same, and the weights and temperature in `pipeline/config.py` were not touched.
+
 Code: `pipeline/backtest/` (kept out of the daily build). Run with `python pipeline/backtest/fetch_history.py` (one-off download, cached under `data/raw/backtest/`) and `python pipeline/backtest/run_backtest.py`.
 
 ## 1. Data used
@@ -13,7 +15,7 @@ Basketball-Reference only, through the project's polite client (one request ever
 - the monthly results pages (usually March and April; July/August for the 2019-20 bubble, May for 2020-21) until every team had 20 regular-season games
 - the playoffs page (every series result and the champion)
 
-Franchises are mapped to today's ids (Sonics to OKC, Nets to BKN, Bobcats to CHA, original Hornets to NOP, Vancouver to MEM). Only regular-season games before the "Playoffs" row are used; play-in games are dropped. All 26 seasons parsed with no missing inputs and no team short of 20 games.
+Franchises are mapped to today's ids (Sonics to OKC, Nets to BKN, Bobcats to CHA, original Hornets to NOP, Vancouver to MEM). Only regular-season games are used (the stage of each game comes from `pipeline/schedule.py`; play-in and playoff games are dropped, with or without a "Playoffs" separator row). All 26 seasons parsed with no missing inputs and no team short of 20 games.
 
 ## 2. Method
 
@@ -92,15 +94,15 @@ Rank among all teams at the end of the regular season (1 = best). `nrtg_rank` is
 | 2017 | GSW | 1 | 44.0 | 0.82 | 0.363 | GSW | 44.0 |
 | 2018 | GSW | 2 | 13.6 | 1.99 | 0.899 | HOU | 34.0 |
 | 2019 | TOR | 8 | 7.6 | 2.57 | 0.97 | MIL | 18.7 |
-| 2020 | LAL | 2 | 16.7 | 1.79 | 0.836 | MIL | 31.7 |
-| 2021 | MIL | 1 | 19.3 | 1.64 | 0.754 | MIL | 19.3 |
-| 2022 | GSW | 10 | 5.4 | 2.92 | 0.997 | BOS | 13.5 |
-| 2023 | DEN | 1 | 18.4 | 1.69 | 0.758 | DEN | 18.4 |
-| 2024 | BOS | 2 | 18.6 | 1.68 | 0.77 | DEN | 22.5 |
-| 2025 | OKC | 1 | 46.7 | 0.76 | 0.318 | OKC | 46.7 |
-| 2026 | NYK | 8 | 4.4 | 3.13 | 1.083 | OKC | 33.0 | 
+| 2020 | LAL | 2 | 15.8 | 1.84 | 0.865 | MIL | 34.5 |
+| 2021 | MIL | 2 | 18.5 | 1.69 | 0.769 | DEN | 18.6 |
+| 2022 | GSW | 10 | 5.1 | 2.98 | 1.004 | DEN | 14.5 |
+| 2023 | DEN | 2 | 16.8 | 1.78 | 0.786 | PHI | 17.0 |
+| 2024 | BOS | 2 | 18.7 | 1.68 | 0.769 | DEN | 23.5 |
+| 2025 | OKC | 1 | 45.1 | 0.8 | 0.336 | OKC | 45.1 |
+| 2026 | NYK | 9 | 4.1 | 3.18 | 1.082 | OKC | 31.9 | 
 
-The model ranked the champion first in 9 of 26 seasons and in the top 3 in 17. The big misses (2004, 2006, 2011, 2019, 2022, 2026) are champions that were not the best team on paper.
+The model ranked the champion first in 7 of 26 seasons and in the top 3 in 17. The big misses (2004, 2006, 2011, 2019, 2022, 2026) are champions that were not the best team on paper.
 
 ## 5. Out-of-sample comparison
 
@@ -113,10 +115,10 @@ All rows are evaluated on seasons the model did not see. Baselines refit their t
 | Uniform | 3.396 | 0.966 | 3.4 | 0.0 | 0.0 | 0.0 | 30.0 |
 | Win% only | 1.997 | 0.834 | 20.3 | 0.27 | 0.69 | 0.88 | 3.0 |
 | Net rating only | 1.914 | 0.795 | 22.8 | 0.31 | 0.62 | 0.92 | 3.0 |
-| Current (as live) | 1.907 | 0.799 | 18.8 | 0.35 | 0.65 | 0.77 | 2.0 |
-| Current weights, T refit | 1.892 | 0.797 | 20.6 | 0.35 | 0.65 | 0.77 | 2.0 |
-| Fitted (regularized) | 1.891 | 0.79 | 21.7 | 0.31 | 0.65 | 0.81 | 2.0 |
-| Fitted on series (T for champion refit) | 1.87 | 0.79 | 22.3 | 0.31 | 0.65 | 0.85 | 2.0 | 
+| Current (as live) | 1.919 | 0.802 | 18.6 | 0.27 | 0.65 | 0.77 | 2.0 |
+| Current weights, T refit | 1.907 | 0.802 | 20.4 | 0.27 | 0.65 | 0.77 | 2.0 |
+| Fitted (regularized) | 1.896 | 0.805 | 21.6 | 0.31 | 0.62 | 0.88 | 2.5 |
+| Fitted on series (T for champion refit) | 1.937 | 0.815 | 20.6 | 0.38 | 0.69 | 0.85 | 2.0 | 
 
 **Train on earlier seasons only, test 2010-11 to 2025-26 (16 seasons)**
 
@@ -125,12 +127,12 @@ All rows are evaluated on seasons the model did not see. Baselines refit their t
 | Uniform | 3.401 | 0.967 | 3.3 | 0.0 | 0.0 | 0.0 | 30.0 |
 | Win% only | 1.917 | 0.797 | 23.5 | 0.38 | 0.62 | 0.88 | 3.0 |
 | Net rating only | 1.934 | 0.789 | 24.4 | 0.31 | 0.56 | 0.88 | 3.0 |
-| Current (as live) | 1.843 | 0.775 | 20.1 | 0.38 | 0.69 | 0.75 | 2.0 |
-| Current weights, T refit | 1.824 | 0.77 | 21.9 | 0.38 | 0.69 | 0.75 | 2.0 |
-| Fitted (regularized) | 1.804 | 0.768 | 21.3 | 0.31 | 0.69 | 0.75 | 2.0 |
-| Fitted on series (T for champion refit) | 1.846 | 0.793 | 21.7 | 0.38 | 0.69 | 0.75 | 2.0 | 
+| Current (as live) | 1.863 | 0.781 | 19.7 | 0.25 | 0.69 | 0.75 | 2.0 |
+| Current weights, T refit | 1.847 | 0.777 | 21.5 | 0.25 | 0.69 | 0.75 | 2.0 |
+| Fitted (regularized) | 1.816 | 0.777 | 21.5 | 0.25 | 0.69 | 0.75 | 2.0 |
+| Fitted on series (T for champion refit) | 1.876 | 0.795 | 21.7 | 0.31 | 0.69 | 0.75 | 2.0 | 
 
-Fitted minus current log loss per season: leave-one-out mean -0.016 (standard error 0.046, better in 15 of 26 seasons); earlier-to-later mean -0.038 (standard error 0.030, better in only 6 of 16). The regularized `kappa` was 0.3 to 3 in most folds.
+Fitted minus current log loss per season: leave-one-out mean -0.023 (standard error 0.051, better in 15 of 26 seasons); earlier-to-later mean -0.047 (standard error 0.034, better in only 5 of 16). The regularized `kappa` was 0.03 to 0.3 in most leave-one-out folds (a strong pull to the current model is rarely chosen) and 10 in most earlier-to-later folds.
 
 **Series level (390 series, leave-one-season-out log loss per series; coin flip is 0.693)**
 
@@ -139,40 +141,40 @@ Fitted minus current log loss per season: leave-one-out mean -0.016 (standard er
 | Coin flip | 0.6931 |
 | Win% only (T refit) | 0.527 |
 | Net rating only (T refit) | 0.5427 |
-| Current weights (T refit) | 0.5509 |
-| Series-fitted regularized | 0.5432 | 
+| Current weights (T refit) | 0.5543 |
+| Series-fitted regularized | 0.5469 | 
 (series: 390)
 
 Findings:
 1. All three real signals beat uniform (3.40) by a wide margin and beat nothing-but-record by a small one.
-2. The current composite is barely better than **net rating alone** on the champion (1.907 vs 1.914 log loss; it loses on top-5 hit rate, 77% vs 92%, and on series). Star power, form and the others add very little measurable value on this sample.
-3. A win-percentage-only model is the best at series level (0.527 vs 0.551 for the composite). That is probably home-court advantage, which the composite does not include and which the Phase 7 simulation should add.
-4. Refitting weights gives at most a 0.016 to 0.04 log-loss gain, well inside the noise.
+2. The current composite is barely better than **net rating alone** on the champion (1.919 vs 1.914 log loss, so slightly worse; it also loses on top-5 hit rate, 77% vs 92%, and on series). Star power, form and the others add very little measurable value on this sample.
+3. A win-percentage-only model is the best at series level (0.527 vs 0.554 for the composite). That is probably home-court advantage, which the composite does not include and which the Phase 7 simulation should add.
+4. Refitting weights gives at most a 0.02 to 0.05 log-loss gain, well inside the noise.
 
 ## 6. Fitted weights and how stable they are
 
-Fits on all 26 seasons (champion objective), in input order net rating / star power / form / star availability / rotation availability:
+Fits on all 26 seasons (champion objective; the nested choice of kappa on all seasons is now 0.03, which stays very close to the current model), in input order net rating / star power / form / star availability / rotation availability:
 
 | kappa | T | weights | in-sample log loss |
 |---|---|---|---|
-| current model | 0.60 | 43 / 28 / 11 / 11 / 6 | 1.907 |
-| 3 | 0.50 | 45 / 30 / 10 / 10 / 5 | 1.879 |
-| 1 (nested choice) | 0.50 | 50 / 30 / 15 / 0 / 5 | 1.820 |
-| 0.3 | 0.50 | 55 / 30 / 10 / 0 / 5 | 1.813 |
-| 0.1 | 0.50 | 60 / 30 / 10 / 0 / 0 | 1.807 |
+| current model | 0.60 | 43 / 28 / 11 / 11 / 6 | 1.919 |
+| 3 | 0.50 | 45 / 30 / 10 / 10 / 5 | 1.892 |
+| 1 | 0.50 | 50 / 30 / 10 / 5 / 5 | 1.855 |
+| 0.3 | 0.50 | 55 / 30 / 10 / 0 / 5 | 1.825 |
+| 0.1 | 0.50 | 65 / 30 / 0 / 0 / 5 | 1.807 |
 
 Bootstrap over seasons (300 resamples, kappa 1; the 10 to 90 percent range of the fitted value):
 
 | input | current | bootstrap mean | 10-90% |
 |---|---|---|---|
-| net rating | 0.43 | 0.49 | 0.45 - 0.50 |
+| net rating | 0.43 | 0.49 | 0.45 - 0.55 |
 | star power | 0.28 | 0.31 | 0.25 - 0.35 |
-| recent form | 0.11 | 0.13 | 0.10 - 0.15 |
+| recent form | 0.11 | 0.11 | 0.05 - 0.15 |
 | star availability | 0.11 | 0.02 | 0.00 - 0.05 |
 | rotation availability | 0.06 | 0.06 | 0.00 - 0.10 |
-| temperature | 0.60 | 0.50 | 0.40 - 0.60 |
+| temperature | 0.60 | 0.51 | 0.40 - 0.60 |
 
-What is stable: net rating and star power are the two big inputs (together about 75-80% in every fit), form about 10-15%, and the temperature wants to be slightly lower (0.5; sharper favorites) but 0.6 is inside the range. What is not stable: star availability goes to zero in champion fits yet stays at 5-10% in series fits, rotation availability swings between 0 and 10%, and the series fits want a much higher T (1.0 to 1.5, which is a different quantity: one series, not a title). The series-based weights (more star power, less net rating) disagree with the champion-based ones. With results this dependent on the objective and resample, the in-sample gains (0.09 for kappa 1) are largely overfitting: the out-of-sample gain is a small fraction of that.
+What is stable: net rating and star power are the two big inputs (together about 75-80% in every fit), form about 5-15%, and the temperature wants to be slightly lower (0.5; sharper favorites) but 0.6 is inside the range. What is not stable: star availability goes to zero in champion fits yet stays at 5-10% in series fits, rotation availability swings between 0 and 10%, and the series fits want a much higher T (1.0 to 1.5, which is a different quantity: one series, not a title). The series-based weights (more star power, less net rating) disagree with the champion-based ones. With results this dependent on the objective and resample, the in-sample gains (0.06 for kappa 1) are largely overfitting: the out-of-sample gain is a small fraction of that.
 
 ## 7. Penalties (sensitivity only, not changed)
 
@@ -180,16 +182,16 @@ In-sample champion log loss with the current weights and T=0.6, scaling the two-
 
 | two-way x | late x0.0 | late x0.5 | late x1.0 | late x1.5 |
 |---|---|---|---|---|
-| 0.0 | 2.137 | 1.966 | 1.91 | 1.894 |
-| 0.5 | 2.088 | 1.947 | 1.902 | 1.889 |
-| 1.0 | 2.062 | 1.944 | 1.907 | 1.896 |
-| 2.0 | 2.059 | 1.967 | 1.939 | 1.931 |
+| 0.0 | 2.151 | 1.979 | 1.923 | 1.906 |
+| 0.5 | 2.102 | 1.96 | 1.915 | 1.902 |
+| 1.0 | 2.076 | 1.957 | 1.919 | 1.908 |
+| 2.0 | 2.072 | 1.98 | 1.952 | 1.943 |
 
-The late-season gate clearly helps (2.06 without it, 1.91 with it) and the live values sit near the best cell. The two-way penalty is nearly flat. No change suggested.
+The late-season gate clearly helps (2.08 without it, 1.92 with it) and the live values sit near the best cell. The two-way penalty is nearly flat. No change suggested.
 
 ## 8. Recommendation
 
-- **Keep the current weights and temperature.** The best honest out-of-sample gain from refitting is 0.016 (leave-one-out) to 0.038 (earlier-to-later) log loss with standard errors of 0.046 and 0.030, and the earlier-to-later fit beat the live model in only 6 of 16 seasons. That is not a clear improvement, and the fitted weights change with the objective. The bar for changing was a gain of at least 0.05 log loss, more than 1.5 standard errors, in both schemes; neither is met.
-- The one consistent hint is that T around 0.5 is slightly better than 0.6 (re-fitting only T improves 1.907 to 1.892), and that the star-availability input as built (games played) does not help. Revisit both after the Phase 7 playoff simulation, when more data per season (series, home court) will give a stronger test. Real injury data would be needed for availability to mean "healthy in the playoffs".
+- **Keep the current weights and temperature.** The best honest out-of-sample gain from refitting is 0.023 (leave-one-out) to 0.047 (earlier-to-later) log loss with standard errors of 0.051 and 0.034, and the earlier-to-later fit beat the live model in only 5 of 16 seasons. That is not a clear improvement, and the fitted weights change with the objective. The bar for changing was a gain of at least 0.05 log loss, more than 1.5 standard errors, in both schemes; neither is met.
+- The one consistent hint is that T around 0.5 is slightly better than 0.6 (re-fitting only T improves 1.919 to 1.907), and that the star-availability input as built (games played) does not help. Revisit both after the Phase 7 playoff simulation, when more data per season (series, home court) will give a stronger test. Real injury data would be needed for availability to mean "healthy in the playoffs".
 - Worth testing next: add home-court advantage and seed, since record alone beat the composite at series level.
 - The hunch can be updated to: the champion is almost always top 8 in net rating (top 6 in the last 10 years) and a top-3 seed by record.

@@ -142,7 +142,7 @@ TEAM_BY_NAME = {t.name: t for t in TEAMS}
 # MARGIN_PER_Z was fitted once, on 2026-11-08, by `python pipeline/calibrate_sim.py`: the value (grid of
 # 15 values, refined to 0.1) that minimizes the sum of squared gaps between the simulation's title
 # probabilities and the live softmax's on that day's real data. Backtest check (docs/simulation-report.md):
-# the best margin on 26 past seasons was 3.5, and leave-one-season-out picks ranged 3.0 to 4.0.
+# the best margin on 26 past seasons was 3.0 (after the Nov 8 backtest-loader fix), and leave-one-season-out picks ranged 3.0 to 4.0.
 # It is NOT refit in the daily run.
 MARGIN_PER_Z = 3.3
 HOME_COURT_POINTS = 2.5        # added to the home team's margin in every game

@@ -13,7 +13,8 @@ from pathlib import Path
 import pandas as pd
 
 from pipeline import config
-from pipeline.parse import ParseError, parse_games, parse_players, parse_ratings
+from pipeline.parse import ParseError, parse_players, parse_ratings
+from pipeline.schedule import parse_schedule
 
 CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "raw" / "backtest"
 FIRST_SEASON = 2001      # first season we score (season ending in 2001 = "2000-01")
@@ -55,16 +56,21 @@ def team_maps(end_year: int) -> tuple[dict, dict]:
     return names, codes
 
 
-def regular_season_html(html: str) -> str:
-    """Return a monthly results page cut off at its "Playoffs" separator row, if it has one."""
-    match = re.search(r"<tr[^>]*>\s*<th[^>]*>\s*Playoffs\s*</th>", html)
-    return html[:match.start()] + "</tbody></table></body></html>" if match else html
-
-
 def parse_regular_games(html: str, names: dict) -> pd.DataFrame:
-    """Finished regular-season games on a monthly results page (play-in games are dropped)."""
-    games = parse_games(regular_season_html(html), names)
-    return games[~games["notes"].str.contains("Play-In", case=False, na=False)].reset_index(drop=True)
+    """Finished regular-season games on a monthly results page.
+
+    Uses pipeline/schedule.py's `stage`, which tells regular-season, play-in and playoff games apart on
+    every era's pages: before the play-in era the playoffs follow a "Playoffs" separator row; since
+    2020-21 there is no separator and the playoff games follow the last play-in game. (An earlier
+    version cut only at the separator, so about 40 playoff and play-in games per season leaked into
+    the recent-form input from 2021-22 on.) Returns the same columns as `parse_games`.
+    """
+    schedule = parse_schedule(html, names)
+    games = schedule[schedule["is_played"] & (schedule["stage"] == "regular") & schedule["home_id"].notna()
+                     & schedule["away_id"].notna()]
+    games = games[["date", "away_id", "away_pts", "home_id", "home_pts", "notes"]].reset_index(drop=True)
+    games[["away_pts", "home_pts"]] = games[["away_pts", "home_pts"]].astype(int)
+    return games
 
 
 def parse_conferences(html: str, names: dict) -> dict[str, str]:
