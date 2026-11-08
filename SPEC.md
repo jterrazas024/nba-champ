@@ -136,6 +136,7 @@ Convert composite to a strength rating, project final standings, seed the bracke
 - Champion profile check for the last 10 champions (net rating rank, offense/defense rank, seed, star BPM, availability).
 - Fit/validate weights on 20+ seasons of playoff series using only pre-playoff data.
 - Metrics: Brier score and log loss on the champion, where the champion ranked in our odds, compared against pre-playoff betting odds.
+- **Done (Nov 8, 2026):** code in `pipeline/backtest/`, results and recommendation in `docs/backtest-report.md` (26 seasons, 2000-01 to 2025-26; no betting odds were collected). Weights and temperature were left unchanged.
 
 ---
 
@@ -260,6 +261,8 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 | Nov 8, 2026 | Star injury factors: Out For Season x0.25, Out x0.6, Day To Day x0.9 (config values); an injured star still counts in star power, with a note |
 | Nov 8, 2026 | `odds.json` keeps all 7 input keys; dropped inputs have weight 0.0 and null values (no schema change) |
 | Nov 8, 2026 | After the regular season ends, v0 stops refreshing (no-op) until the Phase 7 playoff simulation |
+| Nov 8, 2026 | Phase 6 backtest (26 seasons, nested leave-one-season-out): regularized refit gained only 0.016-0.038 log loss with standard errors of 0.03-0.05, so weights and temperature stay as they are (see `docs/backtest-report.md`) |
+| Nov 8, 2026 | Added `numpy` as a dependency (backtest fitting only; not used by the daily build) |
 | Nov 8, 2026 | `prob_change_1d` is null on the first real run, then compares with the previous committed file (real history is Phase 7) |
 
 ## 14. Open questions

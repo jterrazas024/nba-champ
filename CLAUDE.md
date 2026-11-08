@@ -25,6 +25,7 @@ A live website that shows each NBA team's probability of winning the 2026-27 cha
 - Check the plan without sending requests: `python pipeline/spike/probe_sources.py --dry-run`
 - Run the refresh Action by hand: `gh workflow run refresh.yml`, then `gh run list --workflow refresh.yml`
 - Run tests: `pytest`
+- Backtest (not part of the daily build): `python pipeline/backtest/fetch_history.py` (one-off, about 140 requests, cached in `data/raw/backtest/`), then `python pipeline/backtest/run_backtest.py`
 - Preview site: `python -m http.server 8000` then open http://localhost:8000
   (opening `index.html` by double-click will not load `odds.json` because of browser rules, so use the local server)
 
