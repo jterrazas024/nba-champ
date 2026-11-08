@@ -34,6 +34,8 @@ ODDS_PATH = Path(__file__).resolve().parent.parent / "data" / "odds.json"
 MODEL_VERSION = "v0"
 MIN_ROSTER_PLAYERS = 8          # sanity check: a team with fewer parsed players means a broken page
 MAX_DAILY_MOVE = 0.15           # sanity check: no team's title probability moves more than this in one update
+HISTORY_DAYS = 30               # how many daily values each team keeps in `history` (SPEC.md section 7)
+CHANGE_WINDOW_DAYS = 3          # prob_change_1d needs an earlier history entry at most this many days back
 EARLY_SEASON_NOTE_GAMES = 10    # below this many games, add a note that net rating leans on last season
 MAX_NOTES = 4
 SEASON_MONTHS = ["october", "november", "december", "january", "february", "march", "april"]
@@ -124,7 +126,7 @@ def build(client: BRClient, today: date, previous: dict | None) -> BuildResult:
     probs = model.round_probs(model.softmax(final))
     ranks = model.rank_teams(probs, final)
 
-    previous_probs = _previous_probs(previous)
+    history_dates, history = build_history(previous, today, {tid: float(p) for tid, p in probs.items()})
     teams = []
     for team in config.TEAMS:
         tid = team.id
@@ -142,7 +144,8 @@ def build(client: BRClient, today: date, previous: dict | None) -> BuildResult:
             "id": tid, "name": team.name, "conference": team.conference,
             "record": f"{int(row['w'])}-{int(row['l'])}",
             "title_prob": float(probs[tid]), "rank": int(ranks[tid]),
-            "prob_change_1d": round(float(probs[tid]) - previous_probs[tid], 4) if tid in previous_probs else None,
+            "prob_change_1d": _change_from_history(history_dates, history[tid], today),
+            "history": history[tid],
             "composite": round(float(final[tid]), 3),
             "inputs": inputs,
             "notes": _notes(int(games_played[tid]), penalty_notes[tid], stars[tid], availability[tid], inputs),
@@ -157,9 +160,61 @@ def build(client: BRClient, today: date, previous: dict | None) -> BuildResult:
         "model_version": MODEL_VERSION,
         "temperature": config.TEMPERATURE,
         "weights": dict(config.WEIGHTS),
+        "history_dates": history_dates,
         "teams": teams,
     }
     return BuildResult(odds, f"Built odds for {len(teams)} teams ({client.requests_made} requests).")
+
+
+def _previous_history(previous: dict | None, team_ids: list[str]) -> dict[str, dict[str, float]]:
+    """Return {team_id: {YYYY-MM-DD: title_prob}} carried over from the previous file.
+
+    Empty if the previous file is missing, sample data, or from a different model version. A real
+    file without history is seeded with its own date and title_prob values (the one-time bootstrap).
+    Never raises: any problem with the old file means "start fresh" (SPEC.md section 7).
+    """
+    try:
+        if not previous or previous.get("is_sample") or previous.get("model_version") != MODEL_VERSION:
+            return {}
+        by_id = {t["id"]: t for t in previous["teams"]}
+        dates = previous.get("history_dates")
+        if dates is None:
+            seed = datetime.strptime(previous["generated_at"], "%Y-%m-%dT%H:%M:%SZ").date().isoformat()
+            return {tid: {seed: float(by_id[tid]["title_prob"])} for tid in team_ids}
+        result = {}
+        for tid in team_ids:
+            values = by_id[tid]["history"]
+            if len(values) != len(dates):
+                return {}
+            result[tid] = {d: float(v) for d, v in zip(dates, values)}
+        for d in dates:
+            date.fromisoformat(d)
+        return result
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return {}
+
+
+def build_history(previous: dict | None, today: date, probs: dict[str, float]) -> tuple[list[str], dict[str, list[float]]]:
+    """Return (history_dates, {team_id: history}): the last HISTORY_DAYS daily title_probs, oldest first.
+
+    Carries the previous file's history forward and sets today's value (a second run on the same
+    date overwrites it). Gaps stay gaps. Implements SPEC.md section 7 ("history").
+    """
+    today_text = today.isoformat()
+    carried = _previous_history(previous, list(probs))
+    per_team = {tid: {d: v for d, v in carried.get(tid, {}).items() if d < today_text} for tid in probs}
+    for tid, value in probs.items():
+        per_team[tid][today_text] = value
+    dates = sorted(per_team[next(iter(probs))])[-HISTORY_DAYS:]
+    return dates, {tid: [per_team[tid][d] for d in dates] for tid in probs}
+
+
+def _change_from_history(dates: list[str], values: list[float], today: date) -> float | None:
+    """Today's value minus the most recent earlier entry, if that entry is within CHANGE_WINDOW_DAYS days."""
+    if len(dates) < 2 or dates[-1] != today.isoformat():
+        return None
+    gap = (today - date.fromisoformat(dates[-2])).days
+    return round(values[-1] - values[-2], 4) if 0 < gap <= CHANGE_WINDOW_DAYS else None
 
 
 def _previous_probs(previous: dict | None) -> dict[str, float]:

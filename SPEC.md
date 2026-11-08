@@ -153,6 +153,7 @@ Convert composite to a strength rating, project final standings, seed the bracke
   "weights": {"net_rating": 0.38, "star_power": 0.25, "recent_form": 0.10,
               "star_availability": 0.10, "core_net_rating": 0.10,
               "rotation_availability": 0.05, "clutch": 0.02},
+  "history_dates": ["2026-11-07", "2026-11-08"],
   "teams": [
     {
       "id": "SAS",
@@ -162,6 +163,7 @@ Convert composite to a strength rating, project final standings, seed the bracke
       "title_prob": 0.221,
       "rank": 1,
       "prob_change_1d": 0.004,
+      "history": [0.217, 0.221],
       "composite": 1.42,
       "inputs": {
         "net_rating":        {"value": 7.1,  "z": 1.6, "percentile": 94, "contribution": 0.61},
@@ -173,7 +175,7 @@ Convert composite to a strength rating, project final standings, seed the bracke
 }
 ```
 
-Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_prob`; missing inputs are `null` and excluded from the contribution total; file under 100 KB. All 7 input keys always appear: dropped inputs (`core_net_rating`, `clutch`) have weight `0.0` and are `null` for every team, and the site hides them. `prob_change_1d` is `null` when there is no previous real file (the first real run, or the previous file was sample data) and otherwise compares with the previous committed file; real daily history comes in Phase 7. Each team has at most 4 `notes`. The schema may grow, but fields above can't be removed or renamed without updating the pipeline, site, and tests together.
+Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_prob`; missing inputs are `null` and excluded from the contribution total; file under 100 KB. All 7 input keys always appear: dropped inputs (`core_net_rating`, `clutch`) have weight `0.0` and are `null` for every team, and the site hides them. `history_dates` (top level) and `history` (per team) hold the last up to 30 daily `title_prob` values, oldest first, with matching UTC dates (`YYYY-MM-DD`, strictly increasing, same length as every team's `history`). The previous `odds.json` is the only source: its history is carried forward and today's value is added; a second run on the same UTC date overwrites that date's entry; missed days stay as gaps (no backfill). History starts fresh (just today) when the previous file is missing, unreadable, sample data, or from a different `model_version`. A previous real file without history is bootstrapped once: its own date (from `generated_at`) and `title_prob` values seed the history. `prob_change_1d` is today's value minus the value on the most recent earlier date in `history`, and is `null` if that date is more than 3 days back or there is none. Validation of these fields runs only when they are present, so older files still pass. Each team has at most 4 `notes`. The schema may grow, but fields above can't be removed or renamed without updating the pipeline, site, and tests together.
 
 ---
 
@@ -264,6 +266,7 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 | Nov 8, 2026 | Phase 6 backtest (26 seasons, nested leave-one-season-out): regularized refit gained only 0.016-0.038 log loss with standard errors of 0.03-0.05, so weights and temperature stay as they are (see `docs/backtest-report.md`) |
 | Nov 8, 2026 | Added `numpy` as a dependency (backtest fitting only; not used by the daily build) |
 | Nov 8, 2026 | `prob_change_1d` is null on the first real run, then compares with the previous committed file (real history is Phase 7) |
+| Nov 8, 2026 | Phase 7: odds history lives inside `odds.json` (`history_dates` plus a per-team `history`, last 30 days, carried forward from the previous file; no separate history file); `prob_change_1d` now comes from it and is null if the earlier entry is more than 3 days old |
 
 ## 14. Open questions
 

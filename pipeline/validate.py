@@ -7,6 +7,7 @@ from datetime import datetime
 
 MAX_BYTES = 100 * 1024  # SPEC.md section 7: file stays under 100 KB
 EXPECTED_TEAMS = 30
+MAX_HISTORY_DAYS = 30
 TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 
@@ -49,7 +50,40 @@ def validate_odds(odds: dict) -> list[str]:
     elif [t["title_prob"] for t in ranked] != sorted((t["title_prob"] for t in ranked), reverse=True):
         problems.append("rank 1 must have the highest title_prob, and so on down")
 
+    problems += _check_history(odds)
+
     if len(json.dumps(odds, indent=1).encode()) >= MAX_BYTES:
         problems.append("file would be 100 KB or larger")
 
+    return problems
+
+
+def _check_history(odds: dict) -> list[str]:
+    """Checks for the optional `history_dates` / `history` fields (SPEC.md section 7); they only run
+    when those fields are present, so older files still validate."""
+    problems: list[str] = []
+    dates = odds.get("history_dates")
+    if dates is not None:
+        if not isinstance(dates, list) or not all(isinstance(d, str) for d in dates):
+            return ["history_dates must be a list of YYYY-MM-DD strings"]
+        try:
+            for d in dates:
+                if datetime.strptime(d, "%Y-%m-%d").strftime("%Y-%m-%d") != d:
+                    raise ValueError(d)
+        except ValueError:
+            problems.append("history_dates must be valid YYYY-MM-DD dates")
+        if any(a >= b for a, b in zip(dates, dates[1:])):
+            problems.append("history_dates must be strictly increasing")
+        if len(dates) > MAX_HISTORY_DAYS:
+            problems.append(f"history_dates has {len(dates)} entries, at most {MAX_HISTORY_DAYS} allowed")
+    for team in odds["teams"]:
+        if "history" not in team:
+            continue
+        history = team["history"]
+        if dates is None:
+            problems.append(f"{team.get('id')} has history but the file has no history_dates")
+        elif not isinstance(history, list) or len(history) != len(dates):
+            problems.append(f"{team.get('id')} history length does not match history_dates")
+        elif not all(isinstance(v, (int, float)) and not isinstance(v, bool) and 0 <= v <= 1 for v in history):
+            problems.append(f"{team.get('id')} history values must be numbers between 0 and 1")
     return problems
