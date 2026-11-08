@@ -1,0 +1,16 @@
+# Raw data cache (re-fetchable, can be large)
+data/raw/
+
+# Secrets
+.env
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# macOS
+.DS_Store
+
