@@ -263,16 +263,21 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
 .gaxis { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; fill: color-mix(in srgb, var(--ink) 60%, var(--bg)); }
 .guide { stroke: var(--ink); stroke-width: 1; opacity: 0.5; }
 .gline { cursor: pointer; outline: none; }
-.gline .halo { stroke: var(--halo); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round; }
-.gline .ln { stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; opacity: 0.85; transition: stroke-width 0.2s, opacity 0.2s; }
-.gline .gdot { stroke: var(--ink); stroke-width: 1.5; }
-.gline .gdisc { stroke: var(--ink); stroke-width: 1.5; }
-.gline .gabbr { font-family: var(--mono); font-size: 10px; fill: var(--ink); }
-.gline .leader { stroke: color-mix(in srgb, var(--ink) 45%, transparent); stroke-width: 1; fill: none; }
-.gline.sel .ln, .gline.hi .ln { stroke-width: 2.6; opacity: 1; }
-.gline.sel .gabbr, .gline.hi .gabbr { font-weight: 700; }
-.gline:focus-visible .gdisc { stroke-width: 3; }
-.graph-mode .gline:not(.sel):not(.hi) .ln { opacity: 0.6; }
+.gline .ln { stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; opacity: 0.95; transition: stroke-width 0.2s, opacity 0.2s; }
+.gline .gdot { stroke: var(--ink); stroke-width: 1.5; display: none; }
+.gline.hi .gdot, .gline.sel .gdot, .graph.single .gdot { display: inline; }
+.gline.sel .ln, .gline.hi .ln { stroke-width: 2.8; opacity: 1; }
+.graph.has-sel .gline:not(.sel):not(.hi) .ln { opacity: 0.6; }
+.gline:focus-visible .ln { stroke-width: 3.2; }
+
+/* Key under the chart: two rows of five */
+.graph-key { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px 4px; margin-top: 8px; flex: none; }
+.gkey {
+  display: flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 2px; border-radius: 99px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink);
+}
+.gkey svg { flex: none; width: 20px; height: 8px; }
+.gkey[aria-pressed="true"] { background: var(--pill-bg); color: var(--pill-fg); font-weight: 700; }
 
 /* Phone, graph view: the ball steps aside so the chart has room */
 .graph-mode .art-home { display: none; }
@@ -444,7 +449,7 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
   .cont-title { display: block; }
   .seg button { font-size: 12px; padding: 6px 16px; }
   .strip { display: flex; flex-direction: column; gap: 4px; padding: 0; margin: 0; }
-  .graph { height: min(56vh, 470px); flex: none; padding: 0; }
+  .graph { height: min(68vh, 580px); flex: none; padding: 0; }
   .graph-svg { flex: 1 1 0; }
   .graph-mode .art-home { display: grid; }
   .graph-mode .big { --size: min(36vh, 26vw); margin-top: min(1.5vh, 12px); }

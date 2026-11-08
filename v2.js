@@ -177,6 +177,7 @@ function select(id) {
   updateBig($("home-big"), team.title_prob, false);
   renderTeam();
   renderMapSelection();
+  syncGraphSelection();
   updateGraphReadout();
 }
 
@@ -302,18 +303,42 @@ function lineColor(hex) {
 
 const graphView = { idx: 0, hi: null, W: 0, H: 0, pts: null };
 
-// Title odds over time for the top eight teams. Sized from the box it sits in so text stays sharp.
+const GRAPH_TEAMS = 10;
+
+// One color per team; when two of the ten colors are close (two reds, two blues), the later one gets a dash
+// pattern so the lines stay tellable apart.
+function lineStyles(teams) {
+  const dashes = ["", "6 3", "2.5 3", "8 3 2 3"];
+  const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+  const used = [];
+  const styles = {};
+  teams.forEach((team) => {
+    const color = lineColor(colorsOf(team)[0]);
+    const c = rgb(color);
+    let k = 0;
+    while (used.some((u) => u.k === k && dist(u.c, c) < 55)) k++;
+    used.push({ c, k });
+    styles[team.id] = { color, dash: dashes[k % dashes.length] };
+  });
+  return styles;
+}
+
+// Title odds over time for the top ten teams: thin lines in team colors plus a key underneath.
+// Sized from the box it sits in so text stays sharp.
 function renderGraph() {
   const box = $("home-graph");
   if (box.hidden) return;
   const dates = Array.isArray(state.data.history_dates) ? state.data.history_dates : [];
-  const teams = state.teams.slice(0, 8).filter((t) => Array.isArray(t.history) && t.history.length === dates.length && dates.length > 0);
+  const teams = state.teams.slice(0, GRAPH_TEAMS).filter((t) => Array.isArray(t.history) && t.history.length === dates.length && dates.length > 0);
   box.textContent = "";
   if (!teams.length) {
     box.appendChild(el("p", "trend-line", "No history in the data yet."));
     return;
   }
   const n = dates.length;
+  box.classList.toggle("single", n < 2);
+  const styles = lineStyles(teams);
   graphView.idx = n - 1;
   graphView.hi = state.selectedId;
 
@@ -326,11 +351,33 @@ function renderGraph() {
   box.appendChild(wrap);
   if (n < 2) box.appendChild(el("p", "trend-line graph-note", "Trend builds daily · " + n + " day so far. Today's odds are shown."));
 
+  // The key: one button per line (color + dash swatch and abbreviation); picking one selects that team.
+  const key = el("div", "graph-key");
+  key.setAttribute("role", "group");
+  key.setAttribute("aria-label", "Key: tap a team to highlight its line");
+  teams.forEach((team) => {
+    const b = el("button", "gkey");
+    b.type = "button";
+    b.dataset.team = team.id;
+    b.setAttribute("aria-label", team.name);
+    b.setAttribute("aria-pressed", "false");
+    const sw = svgEl("svg", { viewBox: "0 0 22 8", width: 22, height: 8, "aria-hidden": "true", focusable: "false" }, b);
+    const att = { x1: 1, x2: 21, y1: 4, y2: 4, stroke: styles[team.id].color, "stroke-width": 2.4, "stroke-linecap": "round" };
+    if (styles[team.id].dash) att["stroke-dasharray"] = styles[team.id].dash;
+    svgEl("line", att, sw);
+    b.appendChild(el("span", "", team.id));
+    b.addEventListener("click", () => select(team.id));
+    b.addEventListener("pointerenter", () => { graphView.hi = team.id; updateGraphReadout(); });
+    b.addEventListener("pointerleave", () => { graphView.hi = state.selectedId; updateGraphReadout(); });
+    key.appendChild(b);
+  });
+  box.appendChild(key);
+
   const W = Math.max(240, Math.round(wrap.clientWidth || 420));
-  const H = Math.max(150, Math.round(wrap.clientHeight || 300));
+  const H = Math.max(120, Math.round(wrap.clientHeight || 300));
   graphView.W = W;
   graphView.H = H;
-  const L = 34, R = 62, T = 10, B = 24;
+  const L = 34, R = 10, T = 10, B = 24;
   const hiVal = Math.max(...teams.map((t) => Math.max(...t.history)), 0.01);
   const steps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.25];
   const step = steps.find((v) => hiVal / v <= 4.5) || 0.25;
@@ -339,9 +386,9 @@ function renderGraph() {
   const py = (v) => H - B - (v / top) * (H - T - B);
   graphView.pts = { px, n };
 
-  const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H, role: "group", "aria-label": "Title odds over time for the top eight teams" }, wrap);
+  const svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, width: W, height: H, role: "group", "aria-label": "Title odds over time for the top " + teams.length + " teams" }, wrap);
   for (let v = 0; v <= top + 1e-9; v += step) {
-    svgEl("line", { class: "gridl", x1: L, x2: W - R + 6, y1: py(v), y2: py(v) }, svg);
+    svgEl("line", { class: "gridl", x1: L, x2: W - R, y1: py(v), y2: py(v) }, svg);
     const t = svgEl("text", { class: "gaxis", x: L - 6, y: py(v) + 3, "text-anchor": "end" }, svg);
     t.textContent = Math.round(v * 100) + "%";
   }
@@ -352,33 +399,18 @@ function renderGraph() {
   const guide = svgEl("line", { class: "guide", x1: 0, x2: 0, y1: T, y2: H - B }, svg);
   guide.style.display = "none";
 
-  // Label positions at the right edge, spread out so they never overlap.
-  const labels = teams.map((t) => ({ t, y: py(t.history[n - 1]) })).sort((a, b) => a.y - b.y);
-  for (let i = 1; i < labels.length; i++) labels[i].y = Math.max(labels[i].y, labels[i - 1].y + 15);
-  const over = labels.length ? labels[labels.length - 1].y - (H - B) : 0;
-  if (over > 0) labels.forEach((l) => { l.y -= over; });
-  const labelY = {};
-  labels.forEach((l) => { labelY[l.t.id] = l.y; });
-
   const dots = {};
   teams.slice().reverse().forEach((team) => {
-    const c1 = lineColor(colorsOf(team)[0]);
+    const st = styles[team.id];
     const g = svgEl("g", { class: "gline", "data-team": team.id, tabindex: 0, role: "button", "aria-label": team.name + " title odds, " + fmtPct1(team.history[n - 1]) + " on " + shortDate(dates[n - 1]) + ". Arrow keys move through days." }, svg);
     if (n > 1) {
       const d = "M" + team.history.map((v, i) => px(i).toFixed(1) + " " + py(v).toFixed(1)).join(" L");
-      svgEl("path", { class: "halo", d: d, fill: "none" }, g);
-      svgEl("path", { class: "ln", d: d, fill: "none", stroke: c1 }, g);
-      svgEl("path", { d: d, fill: "none", stroke: "transparent", "stroke-width": 14 }, g);
+      const att = { class: "ln", d: d, fill: "none", stroke: st.color };
+      if (st.dash) att["stroke-dasharray"] = st.dash;
+      svgEl("path", att, g);
+      svgEl("path", { d: d, fill: "none", stroke: "transparent", "stroke-width": 12 }, g);
     }
-    const dot = svgEl("circle", { class: "gdot", cx: px(n - 1), cy: py(team.history[n - 1]), r: n === 1 ? 5.5 : 3.6, fill: c1 }, g);
-    dots[team.id] = dot;
-    const lab = svgEl("g", { class: "glabel" }, g);
-    const ly = labelY[team.id];
-    const lx = px(n - 1) + 12;
-    if (Math.abs(ly - py(team.history[n - 1])) > 1) svgEl("path", { class: "leader", d: "M" + (px(n - 1) + 4) + " " + py(team.history[n - 1]) + " L" + (lx - 2) + " " + ly }, lab);
-    svgEl("circle", { cx: lx + 6, cy: ly, r: 7, fill: c1, class: "gdisc" }, lab);
-    const tx = svgEl("text", { x: lx + 17, y: ly + 3.5, class: "gabbr" }, lab);
-    tx.textContent = team.id;
+    dots[team.id] = svgEl("circle", { class: "gdot", cx: px(n - 1), cy: py(team.history[n - 1]), r: n === 1 ? 5.5 : 3.8, fill: st.color }, g);
     g.addEventListener("click", () => pick(team.id));
     g.addEventListener("focus", () => { graphView.hi = team.id; updateGraphReadout(); });
     g.addEventListener("keydown", (e) => {
@@ -395,6 +427,7 @@ function renderGraph() {
   graphView.teams = teams;
   graphView.dates = dates;
   graphView.py = py;
+  graphView.svg = svg;
 
   // Pointer anywhere on the chart picks the day.
   svg.addEventListener("pointermove", (e) => {
@@ -408,7 +441,7 @@ function renderGraph() {
 
   // The same numbers as a table for screen readers.
   const table = el("table", "sr-only");
-  table.appendChild(el("caption", "", "Title odds by day, top eight teams"));
+  table.appendChild(el("caption", "", "Title odds by day, top " + teams.length + " teams"));
   const head = el("tr");
   head.appendChild(el("th", "", "Team"));
   dates.forEach((d) => head.appendChild(el("th", "", shortDate(d))));
@@ -422,7 +455,18 @@ function renderGraph() {
   box.appendChild(table);
 
   syncSelectionClasses();
+  syncGraphSelection();
   updateGraphReadout();
+}
+
+// The selected team's line is drawn last (on top) and the other lines dim, when it is one of the ten.
+function syncGraphSelection() {
+  const box = $("home-graph");
+  if (!graphView.svg || !graphView.teams || !box) return;
+  const inGraph = graphView.teams.some((t) => t.id === state.selectedId);
+  box.classList.toggle("has-sel", inGraph);
+  const line = graphView.svg.querySelector('.gline[data-team="' + state.selectedId + '"]');
+  if (line && line !== graphView.svg.lastElementChild) graphView.svg.appendChild(line);
 }
 
 // Moves the guide line and the readout to the chosen day and team.
