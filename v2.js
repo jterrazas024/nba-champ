@@ -230,12 +230,15 @@ function renderHomeText() {
 function buildStrip() {
   const strip = $("home-strip");
   strip.textContent = "";
+  const top = state.teams[0].title_prob;
   state.teams.slice(0, 8).forEach((team) => {
     const cell = el("button", "cell");
     cell.type = "button";
     cell.dataset.team = team.id;
     cell.setAttribute("aria-label", team.name + ", " + fmtPct1(team.title_prob));
+    cell.style.setProperty("--w", String(Math.max(4, (team.title_prob / Math.max(top, 1e-9)) * 100)));
     cell.appendChild(el("span", "abbr", team.id));
+    cell.appendChild(el("span", "nm", team.name));
     cell.appendChild(crest(team, 30));
     cell.appendChild(el("span", "pct", fmtPct0(team.title_prob)));
     const change = formatChange(team.prob_change_1d);
@@ -311,7 +314,7 @@ function buildRankList() {
   });
   const title = document.querySelector("#page-rankings .page-title");
   if (!document.querySelector("#page-rankings .page-sub")) {
-    const hint = el("p", "page-sub", "Tap a team to pick it. Tap it again for the details.");
+    const hint = el("p", "page-sub", "Select a team. Select it again for its details.");
     title.after(hint);
   }
 }
@@ -587,6 +590,7 @@ function showError(message) {
   $("loading").hidden = true;
   $("track").hidden = true;
   $("dots").hidden = true;
+  $("topnav").hidden = true;
   const box = $("error");
   box.textContent = message;
   box.hidden = false;
@@ -595,6 +599,7 @@ function showError(message) {
 // ---------- Pager ----------
 
 const track = $("track");
+const DESKTOP = window.matchMedia("(min-width: 900px)");
 
 function go(index, fromHash) {
   state.page = Math.max(0, Math.min(PAGES.length - 1, index));
@@ -602,6 +607,11 @@ function go(index, fromHash) {
   document.querySelectorAll(".page").forEach((page, i) => {
     page.inert = i !== state.page;
     page.setAttribute("aria-hidden", String(i !== state.page));
+    page.classList.toggle("before", i < state.page);
+  });
+  document.querySelectorAll(".navlink").forEach((link, i) => {
+    link.classList.toggle("on", i === state.page);
+    link.setAttribute("aria-current", i === state.page ? "page" : "false");
   });
   document.querySelectorAll(".dot").forEach((dot, i) => {
     dot.classList.toggle("on", i === state.page);
@@ -625,6 +635,15 @@ function buildDots() {
     dot.addEventListener("click", () => go(i));
     nav.appendChild(dot);
   });
+  // Desktop: the same pages as a row of named links in the top bar.
+  const bar = $("topnav");
+  bar.textContent = "";
+  PAGES.forEach((id, i) => {
+    const link = el("button", "navlink", document.getElementById("page-" + id).dataset.title);
+    link.type = "button";
+    link.addEventListener("click", () => go(i));
+    bar.appendChild(link);
+  });
 }
 
 function setupPager() {
@@ -634,6 +653,7 @@ function setupPager() {
 
   track.addEventListener("pointerdown", (e) => {
     if (e.target.closest("input[type=range]")) return;
+    if (DESKTOP.matches && e.pointerType === "mouse") return; // on desktop the mouse uses the top nav, not drag
     start = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
     dragging = false;
   });
