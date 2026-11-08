@@ -19,7 +19,9 @@ How one simulated season works:
   5. Tally who made the playoffs, reached the conference finals and the Finals, and won.
 
 Mid-playoff input: a `PlayoffState` gives the bracket seeds and the score of every series
-already started; finished series put the loser out (their title chance is exactly zero).
+already started; finished series put the loser out (their title chance is exactly zero). While
+a conference's play-in is still under way the state lists its six direct qualifiers, the four
+play-in teams and the play-in games already played; the rest of the play-in is simulated.
 """
 from dataclasses import dataclass, field
 
@@ -77,10 +79,18 @@ class PlayoffState:
       round 3: the conference finals, slot 0 (a = winner of R2 slot 0);
       round 4: the Finals, conference 0, slot 0 (a = conference 0's champion).
     A series missing from `scores` has not started (0-0). Reaching 4 wins ends a series.
+
+    A conference whose play-in is not finished has only SIX seeds in `seeds[c]` plus an entry
+    `playin[c] = [t7, t8, t9, t10]` (the four play-in teams by standing) and `playin_results`,
+    which maps (conference, game) -> winning team INDEX for the play-in games already played:
+    game 1 = 7 hosts 8, game 2 = 9 hosts 10, game 3 = loser of game 1 hosts winner of game 2
+    (the winner of game 3 is the 8 seed). Playoff series of that conference cannot have started.
     """
 
     seeds: dict[int, list[int]]
     scores: dict[tuple[int, int, int], tuple[int, int]] = field(default_factory=dict)
+    playin: dict[int, list[int]] = field(default_factory=dict)
+    playin_results: dict[tuple[int, int], int] = field(default_factory=dict)
 
 
 @dataclass
@@ -159,18 +169,28 @@ def _series(rng: np.random.Generator, rr: np.ndarray, key: np.ndarray, a: np.nda
 
 # ---------- the season ----------
 
-def _play_in(rng: np.random.Generator, rr: np.ndarray, order: np.ndarray, params: SimParams) -> np.ndarray:
+def _play_in(rng: np.random.Generator, rr: np.ndarray, order: np.ndarray, params: SimParams,
+             known: dict[int, int] | None = None) -> np.ndarray:
     """Return the eight playoff teams (runs, 8) from a conference ranking `order` (runs, n) of team indexes.
 
     2020-21 format: 7 hosts 8 (winner is the 7 seed); 9 hosts 10; the loser of the first game
-    hosts the winner of the second for the 8 seed.
+    hosts the winner of the second for the 8 seed. `known` maps a game number (1, 2, 3) to the
+    winning team INDEX of a play-in game already played; such a game is not simulated (the random
+    numbers are still drawn, so the other games do not change).
     """
+    known = known or {}
     t7, t8, t9, t10 = order[:, 6], order[:, 7], order[:, 8], order[:, 9]
     seven_wins = _single_game(rng, rr, t7, t8, params)
+    if 1 in known:
+        seven_wins = t7 == known[1]
     seed7, loser = np.where(seven_wins, t7, t8), np.where(seven_wins, t8, t7)
     nine_wins = _single_game(rng, rr, t9, t10, params)
+    if 2 in known:
+        nine_wins = t9 == known[2]
     survivor = np.where(nine_wins, t9, t10)
     loser_wins = _single_game(rng, rr, loser, survivor, params)
+    if 3 in known:
+        loser_wins = loser == known[3]
     seed8 = np.where(loser_wins, loser, survivor)
     return np.column_stack([order[:, :6], seed7, seed8])
 
@@ -189,9 +209,19 @@ def _conference_bracket(rng, rr, key, seeds, state_scores, conf, params):
 
 
 def _check_state(state: PlayoffState, league: League) -> None:
-    """Raise ValueError if the state cannot be right (bad seeds, or a later series started before its feeders finished)."""
-    if sorted(state.seeds) != [0, 1] or any(len(s) != 8 for s in state.seeds.values()):
+    """Raise ValueError if the state cannot be right (bad seeds, a later series started before its feeders finished,
+    playoff games in a conference whose play-in is not over, or play-in results that do not fit)."""
+    if sorted(state.seeds) != [0, 1]:
         raise ValueError("PlayoffState.seeds needs eight teams for each of conferences 0 and 1")
+    for c, seeds in state.seeds.items():
+        if c in state.playin:
+            if len(seeds) != 6 or len(state.playin[c]) != 4:
+                raise ValueError("a conference in the play-in needs six seeds plus four play-in teams")
+            _check_playin(c, state.playin[c], state.playin_results)
+            if any(key[1] == c for key in state.scores):
+                raise ValueError(f"conference {c} has playoff games but its play-in is not finished")
+        elif len(seeds) != 8:
+            raise ValueError("PlayoffState.seeds needs eight teams for each of conferences 0 and 1")
     done = lambda rnd, c, slot: max(state.scores.get((rnd, c, slot), (0, 0))) >= 4   # noqa: E731
     for (rnd, c, slot), (a, b) in state.scores.items():
         if min(a, b) < 0 or max(a, b) > 4 or a == b == 4:
@@ -200,6 +230,22 @@ def _check_state(state: PlayoffState, league: League) -> None:
                    4: [(3, 0, 0), (3, 1, 0)]}.get(rnd, [])
         if (a or b) and not all(done(*f) for f in feeders):
             raise ValueError(f"series {(rnd, c, slot)} has games played but its earlier round is not finished")
+
+
+def _check_playin(c: int, teams: list[int], results: dict[tuple[int, int], int]) -> None:
+    """Raise ValueError if the play-in results of conference c cannot be right for the four play-in `teams` (7, 8, 9, 10)."""
+    won = {game: results[(conf, game)] for (conf, game) in results if conf == c}
+    if set(won) - {1, 2, 3}:
+        raise ValueError("play-in games are numbered 1 to 3")
+    t7, t8, t9, t10 = teams
+    if (1 in won and won[1] not in (t7, t8)) or (2 in won and won[2] not in (t9, t10)):
+        raise ValueError("a play-in winner is not one of the two teams in that game")
+    if 3 in won:
+        if 1 not in won or 2 not in won:
+            raise ValueError("play-in game 3 cannot be played before games 1 and 2")
+        loser = t8 if won[1] == t7 else t7
+        if won[3] not in (loser, won[2]):
+            raise ValueError("the winner of play-in game 3 is not one of its two teams")
 
 
 def simulate(league: League, runs: int = config.SIM_RUNS, seed: int = 0, fmt: str = "playin",
@@ -243,8 +289,14 @@ def simulate(league: League, runs: int = config.SIM_RUNS, seed: int = 0, fmt: st
         bracket, champs, r2_all = [], [], []
         for c in (0, 1):
             if state is not None:
-                seeds = np.tile(np.array(state.seeds[c]), (m, 1))
-                key[:, seeds[0]] = league.wins[seeds[0]] + 0.001 * (8 - np.arange(8))   # seed breaks record ties
+                if c in state.playin:
+                    known = {g: w for (conf, g), w in state.playin_results.items() if conf == c}
+                    order = np.tile(np.array(state.seeds[c] + state.playin[c]), (m, 1))
+                    seeds = _play_in(rng, rr, order, params, known)
+                else:
+                    seeds = np.tile(np.array(state.seeds[c]), (m, 1))
+                for k in range(8):                                      # seed breaks record ties
+                    key[np.arange(m), seeds[:, k]] = league.wins[seeds[:, k]] + 0.001 * (8 - k)
             else:
                 order = members[c][np.argsort(-key[:, members[c]], axis=1)]
                 seeds = _play_in(rng, rr, order, params) if fmt == "playin" else order[:, :8]

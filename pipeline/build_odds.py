@@ -8,7 +8,9 @@ Safety rules (CLAUDE.md "Data source rules"):
   - nothing is written unless the new file passes validation and the sanity checks
   - the file is written to a temporary name and swapped in, so a crash cannot leave half a file
   - any failure exits non-zero and leaves the previous odds.json exactly as it was
-  - before the season starts, and after the regular season ends, the run does nothing (exit 0)
+  - before the season starts the run does nothing (exit 0)
+  - once every team has played 82 games the build switches to playoff mode (SPEC.md section 6.6):
+    the headline comes from the simulation conditioned on the play-in and the series played so far
 
 Run:  python pipeline/build_odds.py [--out PATH] [--today YYYY-MM-DD]
 """
@@ -26,7 +28,7 @@ import pandas as pd
 # Allow running as a plain script (python pipeline/build_odds.py) as well as a module.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline import config, features, model, sim, sim_inputs  # noqa: E402
+from pipeline import config, features, model, playoffs, sim, sim_inputs  # noqa: E402
 from pipeline.fetch import BRClient, Blocked, FetchError  # noqa: E402
 from pipeline.parse import ParseError, parse_games, parse_injuries, parse_players, parse_ratings  # noqa: E402
 from pipeline.seed import daily_seed  # noqa: E402
@@ -42,6 +44,7 @@ EARLY_SEASON_NOTE_GAMES = 10    # below this many games, add a note that net rat
 MAX_NOTES = 4
 SEASON_MONTHS = ["october", "november", "december", "january", "february", "march", "april", "may", "june"]
 MONTH_INDEX = {10: 0, 11: 1, 12: 2, 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8}
+PLAYOFF_MONTH_INDEX = 7        # SEASON_MONTHS[7] is may: from here on a month page may not exist yet
 DEFAULT_MONTH_INDEX = 6         # any other month (offseason) starts from April, as before May and June were added
 
 INPUT_LABELS = {
@@ -68,13 +71,21 @@ class BuildResult:
 def fetch_recent_games(client: BRClient, end_year: int, today: date, team_ids: list[str]) -> pd.DataFrame:
     """Fetch monthly results pages, newest month first, until every team has 20 finished games.
 
-    Stops at October at the latest. Returns all finished games found (oldest first).
+    Stops at October at the latest. Returns all finished games found (oldest first). A May or June
+    page that does not exist yet (the month's first game is not on the calendar) is skipped.
     """
     start = MONTH_INDEX.get(today.month, DEFAULT_MONTH_INDEX)
     frames = []
     for index in range(start, -1, -1):
         month = SEASON_MONTHS[index]
-        html = client.get_html(f"/leagues/NBA_{end_year}_games-{month}.html", f"games_{end_year}_{month}")
+        try:
+            html = client.get_html(f"/leagues/NBA_{end_year}_games-{month}.html", f"games_{end_year}_{month}")
+        except Blocked:
+            raise
+        except FetchError:
+            if index < PLAYOFF_MONTH_INDEX:
+                raise
+            continue
         frames.append(parse_games(html))
         combined = pd.concat(frames, ignore_index=True)
         played = pd.concat([combined["home_id"], combined["away_id"]]).value_counts()
@@ -91,6 +102,10 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
     With `with_sim`, the playoff simulation is run afterwards and published in extra fields
     (shadow mode, SPEC.md section 7). That stage is optional: if it fails for any reason, the
     softmax odds are returned without the extra fields and a WARNING goes to stderr.
+
+    Once every team has 82 games the build is in playoff mode: the simulation is required (it IS
+    the headline, SPEC.md section 6.6) and any problem with it fails the build, which leaves the
+    previous file in place.
     """
     end_year = config.season_end_year(today)
     ratings = parse_ratings(client.get_html(f"/leagues/NBA_{end_year}.html", f"ratings_{end_year}"))
@@ -99,8 +114,7 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
     games_played = features.team_games(ratings)
     if (games_played == 0).all():
         return BuildResult(None, "The season has not started; leaving odds.json unchanged.")
-    if (games_played >= config.SEASON_GAMES).all():
-        return BuildResult(None, "The regular season is over; leaving odds.json unchanged (playoff odds come in Phase 7).")
+    playoff_mode = bool((games_played >= config.SEASON_GAMES).all())
 
     prior = parse_ratings(client.get_html(f"/leagues/NBA_{end_year - 1}.html", f"ratings_{end_year - 1}"))
     seasons = [parse_players(client.get_html(f"/leagues/NBA_{year}_advanced.html", f"players_advanced_{year}"))
@@ -131,10 +145,19 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
         raise BuildError(f"no usable inputs for: {', '.join(composite.index[composite.isna()])}")
     penalty, penalty_notes = model.penalties(ratings, values["net_rating"], today, end_year)
     final = composite + penalty
-    probs = model.round_probs(model.softmax(final))
+    softmax_probs = model.round_probs(model.softmax(final))
+    post, playoff_sim = None, None
+    if playoff_mode:
+        post, per_team_sim, sim_top = _run_playoff_simulation(client, today, end_year, ratings, games_played,
+                                                              final if config.SIM_USES_PENALTIES else composite)
+        playoff_sim = (per_team_sim, sim_top)
+        probs = pd.Series({tid: v["sim_prob"] for tid, v in per_team_sim.items()}).reindex(softmax_probs.index)
+    else:
+        probs = softmax_probs
     ranks = model.rank_teams(probs, final)
 
     history_dates, history = build_history(previous, today, {tid: float(p) for tid, p in probs.items()})
+    source_changed = bool(previous) and previous.get("headline_source", "softmax") != ("simulation" if playoff_mode else "softmax")
     teams = []
     for team in config.TEAMS:
         tid = team.id
@@ -148,16 +171,22 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
                 "percentile": int(percentile[key][tid]),
                 "contribution": round(float(contributions.loc[tid, key]), 3),
             } if ok else None
-        teams.append({
+        entry = {
             "id": tid, "name": team.name, "conference": team.conference,
             "record": f"{int(row['w'])}-{int(row['l'])}",
             "title_prob": float(probs[tid]), "rank": int(ranks[tid]),
-            "prob_change_1d": _change_from_history(history_dates, history[tid], today),
+            "prob_change_1d": None if source_changed else _change_from_history(history_dates, history[tid], today),
             "history": history[tid],
             "composite": round(float(final[tid]), 3),
             "inputs": inputs,
             "notes": _notes(int(games_played[tid]), penalty_notes[tid], stars[tid], availability[tid], inputs),
-        })
+        }
+        if playoff_mode:
+            entry.update(playoff_sim[0][tid])
+            entry["softmax_prob"] = float(softmax_probs[tid])
+            entry["status"] = _status(tid, post)
+            entry["notes"] = (_playoff_notes(tid, post) + entry["notes"])[:MAX_NOTES]
+        teams.append(entry)
     teams.sort(key=lambda t: t["rank"])
 
     odds = {
@@ -166,13 +195,18 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
         "is_sample": False,
         "games_played_league_avg": round(float(games_played.mean()), 1),
         "model_version": MODEL_VERSION,
+        "phase": post.phase if playoff_mode else "regular_season",
+        "headline_source": "simulation" if playoff_mode else "softmax",
         "temperature": config.TEMPERATURE,
         "weights": dict(config.WEIGHTS),
         "history_dates": history_dates,
         "teams": teams,
     }
     simulated = False
-    if with_sim:
+    if playoff_mode:
+        odds["sim"] = playoff_sim[1]
+        simulated = True
+    elif with_sim:
         simulated = _add_simulation(odds, client, today, end_year, ratings, games_played,
                                     final if config.SIM_USES_PENALTIES else composite)
     note = "with" if simulated else "without"
@@ -197,6 +231,12 @@ def _run_simulation(client: BRClient, today: date, end_year: int, ratings: pd.Da
     league = sim.league_from_frames(composite * config.MARGIN_PER_Z, games_played, by_team["w"].astype(float),
                                     {t.id: t.conference for t in config.TEAMS}, remaining)
     result = sim.simulate(league, runs=config.SIM_RUNS, seed=seed, fmt="playin")
+    return _sim_fields(result), {"runs": int(result.runs), "seed_date": today.isoformat(), "mode": "regular_season",
+                                 "margin_per_z": config.MARGIN_PER_Z}
+
+
+def _sim_fields(result: sim.SimResult) -> dict[str, dict]:
+    """Return {team_id: {"sim_prob": ..., "sim": {...}}}: the per-team simulation fields of odds.json."""
     title = result.title_probs()
     per_team = {}
     for i, tid in enumerate(result.ids):
@@ -207,9 +247,51 @@ def _run_simulation(client: BRClient, today: date, end_year: int, ratings: pd.Da
                     "make_playoffs": round(float(result.playoffs[i]), 4),
                     "seed_avg": None if pd.isna(seed_avg) else round(float(seed_avg), 2)},
         }
-    top = {"runs": int(result.runs), "seed_date": today.isoformat(), "mode": "regular_season",
+    return per_team
+
+
+# ---------- playoff mode (SPEC.md section 6.6) ----------
+
+def _run_playoff_simulation(client: BRClient, today: date, end_year: int, ratings: pd.DataFrame,
+                            games_played: pd.Series, composite: pd.Series):
+    """Read the postseason so far and simulate the rest. Returns (Postseason, per-team sim fields, top-level `sim`).
+
+    Strength is the same as before the playoffs (MARGIN_PER_Z x composite). Unlike the shadow-mode
+    simulation this stage is required: it raises on any problem, including a bracket that does not
+    fit the games or a team that is out but still has title odds.
+    """
+    games = playoffs.fetch_postseason(client, end_year, today)
+    ids = list(composite.index)
+    post = playoffs.read_postseason(games, ratings, ids)
+    seed = daily_seed(today, config.season_label(end_year), MODEL_VERSION)
+    by_team = ratings.set_index("team_id")
+    league = sim.league_from_frames(composite * config.MARGIN_PER_Z, games_played, by_team["w"].astype(float),
+                                    {t.id: t.conference for t in config.TEAMS})
+    result = sim.simulate(league, runs=config.SIM_RUNS, seed=seed, fmt="playin", state=post.state)
+    per_team = _sim_fields(result)
+    alive = set(post.alive(ids))
+    zombies = [t for t in ids if t not in alive and per_team[t]["sim_prob"] != 0]
+    if zombies:
+        raise BuildError(f"teams that are out still have title odds: {', '.join(zombies)}")
+    if post.champion and per_team[post.champion]["sim_prob"] != 1.0:
+        raise BuildError(f"{post.champion} won the title but its odds are {per_team[post.champion]['sim_prob']}")
+    top = {"runs": int(result.runs), "seed_date": today.isoformat(), "mode": post.phase,
            "margin_per_z": config.MARGIN_PER_Z}
-    return per_team, top
+    return post, per_team, top
+
+
+def _status(team_id: str, post: playoffs.Postseason) -> str:
+    """Return "champion", "alive" or "eliminated" for the `status` field."""
+    if team_id == post.champion:
+        return "champion"
+    return "eliminated" if team_id in post.out else "alive"
+
+
+def _playoff_notes(team_id: str, post: playoffs.Postseason) -> list[str]:
+    """Return the short note that goes first in a team's notes in playoff mode (empty for a team still alive)."""
+    if team_id == post.champion:
+        return ["Won the championship"]
+    return [post.out[team_id]] if team_id in post.out else []
 
 
 def _add_simulation(odds: dict, client: BRClient, today: date, end_year: int, ratings: pd.DataFrame,
@@ -319,11 +401,29 @@ def check_before_publishing(odds: dict, previous: dict | None) -> list[str]:
         json.dumps(odds, allow_nan=False)
     except ValueError:
         problems.append("the file contains NaN or infinite numbers")
+    playoff_mode = odds.get("headline_source") == "simulation"
     for tid, before in _previous_probs(previous).items():
         now = next((t["title_prob"] for t in odds["teams"] if t["id"] == tid), None)
-        if now is not None and abs(now - before) > MAX_DAILY_MOVE:
+        # In playoff mode a big move is real (a team out, a game 7 won), so the 15-point limit does not
+        # apply; the check below catches the mistake that matters there (a team coming back from the dead).
+        if now is not None and not playoff_mode and abs(now - before) > MAX_DAILY_MOVE:
             problems.append(f"{tid} moved {abs(now - before):.1%} in one update (limit {MAX_DAILY_MOVE:.0%})")
+    if playoff_mode:
+        problems += _revived_teams(odds, previous)
     return problems
+
+
+def _revived_teams(odds: dict, previous: dict | None) -> list[str]:
+    """Return a problem for each team the previous playoff-mode file marked eliminated that has title odds now.
+
+    Only applies when the previous file is real, from the same season, and itself in playoff mode.
+    """
+    if not previous or previous.get("is_sample") or previous.get("season") != odds.get("season") \
+            or previous.get("headline_source") != "simulation":
+        return []
+    out = {t["id"] for t in previous.get("teams", []) if t.get("status") in ("eliminated",)}
+    return [f"{t['id']} was eliminated in the previous update but has title odds now"
+            for t in odds["teams"] if t["id"] in out and t["title_prob"] > 0]
 
 
 def write_atomically(odds: dict, path: Path) -> None:

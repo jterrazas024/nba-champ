@@ -140,10 +140,10 @@ def test_before_the_season_nothing_is_built():
     assert result.odds is None and "not started" in result.message
 
 
-def test_after_the_regular_season_nothing_is_built():
-    pages = league_pages(games=82)
-    result = build(FakeClient(pages), date(2027, 4, 20), None)
-    assert result.odds is None and "over" in result.message
+def test_after_the_regular_season_the_build_switches_to_playoff_mode():
+    from tests.synthetic import playoff_league_pages
+    result = build(FakeClient(playoff_league_pages([])), date(2027, 4, 20), None)
+    assert result.odds is not None and result.odds["headline_source"] == "simulation"
 
 
 # ---------- sanity checks ----------
