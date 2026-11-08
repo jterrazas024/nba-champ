@@ -47,9 +47,8 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 
 ## Data source rules
 
-- Basketball-Reference: **never exceed 20 requests per minute** (a violation blocks the IP for up to a day). Pace requests (one every ~4 seconds), cache every page under `data/raw/`, and never re-fetch what is already cached for the day.
-- `stats.nba.com` / `nba_api`: blocks cloud IPs including GitHub Actions. Test from the laptop and from Actions before depending on it.
-- `cdn.nba.com`: works from anywhere.
+- Basketball-Reference (the chosen source; tested from Actions Nov 7, 2026): **never exceed 20 requests per minute** (a violation blocks the IP for up to a day). Pace requests (one every ~4 seconds; robots.txt asks for 3), cache every page under `data/raw/`, and never re-fetch what is already cached for the day. Identify the project in the User-Agent. Stay out of the paths robots.txt disallows (`*/gamelog/`, `*/splits/`, `*/on-off/`, `*/lineups/`, `*/shooting/`, `/play-index/` searches). **On any 403, 429, or bot-check page, stop the whole run and do not retry.** It can block non-US IPs (a Mexican IP got a Cloudflare 403), so test from a US location.
+- `stats.nba.com` / `nba_api` and `cdn.nba.com`: **do not use.** They time out or return 403 from every network we tried (home, hotspot, VPN), and others report 403 from GitHub Actions. Never disguise requests as a browser or otherwise work around a block; ask first.
 - Every fetch module must have timeouts, retries with backoff, and a clear error message on failure. If a refresh fails, the Action must fail loudly and leave the previous `odds.json` in place rather than publishing broken data.
 - No API keys in the repo. If one is ever needed, it goes in GitHub Actions secrets and a local `.env` that is git-ignored.
 

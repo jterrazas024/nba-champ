@@ -76,12 +76,23 @@ nba-title-odds/
 
 | Source | Used for | Access notes |
 |---|---|---|
-| Basketball-Reference | Team ratings (ORtg/DRtg/NRtg, SRS), player BPM and minutes, game logs, standings | Max 20 requests/min; cache everything; scraping must stay polite |
-| cdn.nba.com | Scoreboard, box scores, play-by-play | Not blocked from cloud IPs |
-| stats.nba.com via `nba_api` | Clutch splits, lineup/on-off data | Blocked from cloud IPs; test before relying on it |
-| Phase 3 task | Decide the final source per input after testing from laptop and from GitHub Actions | Record the result in this file |
+| **Basketball-Reference (chosen)** | Team ratings (ORtg/DRtg/NRtg, SRS, SOS), player BPM, minutes and games played (3 seasons), current injuries, monthly game results | Tested Nov 7, 2026: all 7 pages returned HTTP 200 with the needed columns, from a US IP and from GitHub Actions. Blocked (Cloudflare 403) from a Mexican IP, so it can be location-dependent. robots.txt: crawl-delay 3s; disallows `*/gamelog/`, `*/splits/`, `*/on-off/`, `*/lineups/`, `*/shooting/` and `/play-index/` searches. Our limit: one request every 4s, max 20/min, cached daily. Any 403/429 stops the run. |
+| cdn.nba.com | Scoreboard, schedule JSON | Not usable: Akamai "Access Denied" (403) from home, hotspot, and a Chicago VPN. Others report 403 from Actions too. |
+| stats.nba.com / `nba_api` | Clutch splits, lineup/on-off data | Not usable: requests time out (home, hotspot, VPN); `nba_api` reports the same from cloud IPs. We will not work around the block. |
+| balldontlie (backup) | Schedule and scores (free, 5 req/min); injuries and minutes (ALL-STAR, $9.99/mo) | Official API with a key. Not needed for now; see `docs/data-source-research.md`. |
 
-**Fallback:** if a needed source is unreachable from GitHub Actions, run the pipeline locally on a schedule and push `odds.json`. Site and deploy don't change.
+**Per-input source (decided in Phase 3):**
+
+| Input | Source | Notes |
+|---|---|---|
+| Net rating, SRS | Basketball-Reference season page | Early-season SOS is noisy (e.g. +9.7 margin but SRS 0.2 after 9 games); the preseason-prior blend in 6.3 handles this. |
+| Star power (BPM) | Basketball-Reference player advanced page | BPM is published directly. Apply the minimum games/minutes filter (a 2-minute player can show BPM 27). |
+| Star and rotation availability | Player advanced pages for the last 3 seasons (G, MP) plus the injuries page | Team games played come from the team table (W+L). |
+| Recent form | Basketball-Reference monthly results pages | Scores only, so use point differential per game over the last 20 games (not per 100 possessions). |
+| Clutch | Not available from a usable source | Open question (Section 14): close-game proxy from final scores, or drop it. Weights renormalize if absent. |
+| Core net rating | Not available (needs per-game player logs; `*/gamelog/` is disallowed by robots.txt) | Stays deferred, as in 6.1. |
+
+**Fallback:** if Basketball-Reference starts blocking GitHub Actions, switch to a keyed API (balldontlie) for the pieces it covers, or run the pipeline from a US-based machine on a schedule and push `odds.json`. Site and deploy don't change. The refresh job must fail loudly and keep the last good file (Section 9).
 
 ---
 
@@ -215,7 +226,7 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 
 | Risk | Mitigation |
 |---|---|
-| NBA stats blocked from GitHub Actions | Test in Phase 3; fall back to local scheduled run or alternative sources |
+| Data source blocks us (already happened: stats.nba.com, cdn.nba.com, and Basketball-Reference from a non-US IP) | Phase 3 tested every source; Basketball-Reference works from Actions today. Never work around a block; stop on 403/429; keep the last good `odds.json`; fall back to a keyed API |
 | Scraping blocks / terms limits | Respect 20 requests/min, cache, fetch once per day |
 | Early-season noise | Preseason prior blend (Section 6.3) |
 | Source page layout changes break parsing | Parsing tests on saved samples; Action fails loudly; last good file stays live |
@@ -236,9 +247,12 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 | Nov 7, 2026 | Starting weights per Section 6.1 (net rating 38%) |
 | Nov 7, 2026 | Public GitHub repo |
 | Nov 7, 2026 | Start with Phase 0 |
+| Nov 8, 2026 | Phase 3: Basketball-Reference is the data source (works from Actions); do not use stats.nba.com or cdn.nba.com; never evade bot protection |
+| Nov 8, 2026 | Added `lxml` as a dependency (reads Basketball-Reference's HTML tables) |
 
 ## 14. Open questions
 
-- Which exact source gives SoS-adjusted net rating and clutch splits that work from Actions? (Phase 3)
+- Clutch: no usable source for true clutch splits. Use a close-game proxy from final scores, or drop it and renormalize? (Decide in Phase 4)
+- Is one successful Actions run enough? Re-check after the first week of scheduled runs; Cloudflare can change its mind.
 - Preseason prior: last season's net rating regressed to the mean, or the preseason betting market? (Decide in Phase 4)
 - Daily refresh time, and whether to refresh more often on game days.
