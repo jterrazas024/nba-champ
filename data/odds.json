@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-11-08T06:23:45Z",
+ "generated_at": "2026-11-08T06:26:57Z",
  "season": "2026-27",
  "is_sample": false,
  "games_played_league_avg": 8.8,
@@ -66,7 +66,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.16105,
+   "sim": {
+    "finals": 0.2343,
+    "conf_finals": 0.3956,
+    "make_playoffs": 0.9365,
+    "seed_avg": 3.14
+   }
   },
   {
    "id": "OKC",
@@ -116,7 +123,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.1334,
+   "sim": {
+    "finals": 0.1983,
+    "conf_finals": 0.3539,
+    "make_playoffs": 0.9252,
+    "seed_avg": 3.23
+   }
   },
   {
    "id": "DET",
@@ -166,7 +180,14 @@
    },
    "notes": [
     "Early season: only 8 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.12125,
+   "sim": {
+    "finals": 0.2702,
+    "conf_finals": 0.446,
+    "make_playoffs": 0.9619,
+    "seed_avg": 2.66
+   }
   },
   {
    "id": "HOU",
@@ -216,7 +237,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.07055,
+   "sim": {
+    "finals": 0.1142,
+    "conf_finals": 0.2318,
+    "make_playoffs": 0.845,
+    "seed_avg": 4.09
+   }
   },
   {
    "id": "LAL",
@@ -264,7 +292,14 @@
     },
     "clutch": null
    },
-   "notes": []
+   "notes": [],
+   "sim_prob": 0.06405,
+   "sim": {
+    "finals": 0.1057,
+    "conf_finals": 0.2185,
+    "make_playoffs": 0.8462,
+    "seed_avg": 4.06
+   }
   },
   {
    "id": "BOS",
@@ -314,7 +349,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.0757,
+   "sim": {
+    "finals": 0.1897,
+    "conf_finals": 0.3493,
+    "make_playoffs": 0.9316,
+    "seed_avg": 3.18
+   }
   },
   {
    "id": "GSW",
@@ -364,7 +406,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.04055,
+   "sim": {
+    "finals": 0.0705,
+    "conf_finals": 0.1545,
+    "make_playoffs": 0.7231,
+    "seed_avg": 4.77
+   }
   },
   {
    "id": "DEN",
@@ -414,7 +463,14 @@
    },
    "notes": [
     "Early season: only 7 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.04225,
+   "sim": {
+    "finals": 0.0687,
+    "conf_finals": 0.1502,
+    "make_playoffs": 0.6891,
+    "seed_avg": 4.87
+   }
   },
   {
    "id": "MIN",
@@ -464,7 +520,14 @@
    },
    "notes": [
     "Anthony Edwards (star): Out"
-   ]
+   ],
+   "sim_prob": 0.04155,
+   "sim": {
+    "finals": 0.0676,
+    "conf_finals": 0.1536,
+    "make_playoffs": 0.7374,
+    "seed_avg": 4.7
+   }
   },
   {
    "id": "POR",
@@ -514,7 +577,14 @@
    },
    "notes": [
     "Early season: only 8 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.0397,
+   "sim": {
+    "finals": 0.0664,
+    "conf_finals": 0.149,
+    "make_playoffs": 0.7221,
+    "seed_avg": 4.71
+   }
   },
   {
    "id": "CLE",
@@ -564,7 +634,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.04615,
+   "sim": {
+    "finals": 0.1297,
+    "conf_finals": 0.2597,
+    "make_playoffs": 0.8576,
+    "seed_avg": 4.0
+   }
   },
   {
    "id": "NYK",
@@ -614,7 +691,14 @@
    },
    "notes": [
     "Early season: only 8 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.044,
+   "sim": {
+    "finals": 0.1169,
+    "conf_finals": 0.2317,
+    "make_playoffs": 0.8122,
+    "seed_avg": 4.33
+   }
   },
   {
    "id": "MEM",
@@ -664,7 +748,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.01675,
+   "sim": {
+    "finals": 0.031,
+    "conf_finals": 0.0751,
+    "make_playoffs": 0.5093,
+    "seed_avg": 5.58
+   }
   },
   {
    "id": "MIA",
@@ -714,7 +805,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.01705,
+   "sim": {
+    "finals": 0.0546,
+    "conf_finals": 0.1281,
+    "make_playoffs": 0.6442,
+    "seed_avg": 5.15
+   }
   },
   {
    "id": "ATL",
@@ -764,7 +862,14 @@
    },
    "notes": [
     "Jalen Johnson (star): Day To Day"
-   ]
+   ],
+   "sim_prob": 0.0176,
+   "sim": {
+    "finals": 0.063,
+    "conf_finals": 0.1397,
+    "make_playoffs": 0.7315,
+    "seed_avg": 4.79
+   }
   },
   {
    "id": "TOR",
@@ -816,7 +921,14 @@
     "Early season: only 9 games played, so net rating leans on last season",
     "Immanuel Quickley (star): Day To Day",
     "Scottie Barnes (star): Day To Day"
-   ]
+   ],
+   "sim_prob": 0.01705,
+   "sim": {
+    "finals": 0.0573,
+    "conf_finals": 0.1368,
+    "make_playoffs": 0.6946,
+    "seed_avg": 4.85
+   }
   },
   {
    "id": "PHI",
@@ -864,7 +976,14 @@
     },
     "clutch": null
    },
-   "notes": []
+   "notes": [],
+   "sim_prob": 0.0171,
+   "sim": {
+    "finals": 0.0609,
+    "conf_finals": 0.1466,
+    "make_playoffs": 0.7935,
+    "seed_avg": 4.4
+   }
   },
   {
    "id": "DAL",
@@ -914,7 +1033,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.00665,
+   "sim": {
+    "finals": 0.0143,
+    "conf_finals": 0.0384,
+    "make_playoffs": 0.3425,
+    "seed_avg": 6.0
+   }
   },
   {
    "id": "NOP",
@@ -964,7 +1090,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.007,
+   "sim": {
+    "finals": 0.0128,
+    "conf_finals": 0.0328,
+    "make_playoffs": 0.2818,
+    "seed_avg": 6.23
+   }
   },
   {
    "id": "LAC",
@@ -1014,7 +1147,14 @@
    },
    "notes": [
     "Early season: only 8 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.0028,
+   "sim": {
+    "finals": 0.0062,
+    "conf_finals": 0.0184,
+    "make_playoffs": 0.1626,
+    "seed_avg": 6.51
+   }
   },
   {
    "id": "PHX",
@@ -1065,7 +1205,14 @@
    "notes": [
     "Early season: only 7 games played, so net rating leans on last season",
     "Jordan Goodwin (star): Day To Day"
-   ]
+   ],
+   "sim_prob": 0.00455,
+   "sim": {
+    "finals": 0.0091,
+    "conf_finals": 0.0245,
+    "make_playoffs": 0.219,
+    "seed_avg": 6.27
+   }
   },
   {
    "id": "ORL",
@@ -1115,7 +1262,14 @@
    },
    "notes": [
     "Early season: only 8 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.00335,
+   "sim": {
+    "finals": 0.0131,
+    "conf_finals": 0.0376,
+    "make_playoffs": 0.3326,
+    "seed_avg": 6.03
+   }
   },
   {
    "id": "CHA",
@@ -1165,7 +1319,14 @@
    },
    "notes": [
     "Moussa Diabat\u00e9 (star): Day To Day"
-   ]
+   ],
+   "sim_prob": 0.0022,
+   "sim": {
+    "finals": 0.0105,
+    "conf_finals": 0.0281,
+    "make_playoffs": 0.2535,
+    "seed_avg": 6.3
+   }
   },
   {
    "id": "IND",
@@ -1216,7 +1377,14 @@
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season",
     "Tyrese Haliburton (star): Out"
-   ]
+   ],
+   "sim_prob": 0.00235,
+   "sim": {
+    "finals": 0.0109,
+    "conf_finals": 0.0301,
+    "make_playoffs": 0.285,
+    "seed_avg": 6.15
+   }
   },
   {
    "id": "MIL",
@@ -1266,7 +1434,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.0012,
+   "sim": {
+    "finals": 0.006,
+    "conf_finals": 0.0152,
+    "make_playoffs": 0.1505,
+    "seed_avg": 6.54
+   }
   },
   {
    "id": "BKN",
@@ -1316,7 +1491,14 @@
    },
    "notes": [
     "Early season: only 8 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.00185,
+   "sim": {
+    "finals": 0.0076,
+    "conf_finals": 0.0204,
+    "make_playoffs": 0.2015,
+    "seed_avg": 6.35
+   }
   },
   {
    "id": "UTA",
@@ -1366,7 +1548,14 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.00025,
+   "sim": {
+    "finals": 0.0006,
+    "conf_finals": 0.0019,
+    "make_playoffs": 0.0372,
+    "seed_avg": 6.91
+   }
   },
   {
    "id": "WAS",
@@ -1418,7 +1607,14 @@
     "Early season: only 9 games played, so net rating leans on last season",
     "Justin Champagnie (star): Out",
     "Anthony Davis (star): Day To Day"
-   ]
+   ],
+   "sim_prob": 0.00115,
+   "sim": {
+    "finals": 0.0052,
+    "conf_finals": 0.0176,
+    "make_playoffs": 0.212,
+    "seed_avg": 6.31
+   }
   },
   {
    "id": "CHI",
@@ -1469,7 +1665,14 @@
    "notes": [
     "Early season: only 8 games played, so net rating leans on last season",
     "Jalen Smith (star): Day To Day"
-   ]
+   ],
+   "sim_prob": 0.00075,
+   "sim": {
+    "finals": 0.0044,
+    "conf_finals": 0.0131,
+    "make_playoffs": 0.1377,
+    "seed_avg": 6.49
+   }
   },
   {
    "id": "SAC",
@@ -1519,7 +1722,20 @@
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
-   ]
+   ],
+   "sim_prob": 0.00015,
+   "sim": {
+    "finals": 0.0004,
+    "conf_finals": 0.0017,
+    "make_playoffs": 0.0227,
+    "seed_avg": 7.12
+   }
   }
- ]
+ ],
+ "sim": {
+  "runs": 20000,
+  "seed_date": "2026-11-08",
+  "mode": "regular_season",
+  "margin_per_z": 3.3
+ }
 }
