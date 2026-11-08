@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NBA Championship Odds 2026-27</title>
+  <meta name="description" content="Model-based probability of each NBA team winning the 2026-27 championship.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>NBA Championship Odds</h1>
+      <p class="season" id="season"></p>
+      <div class="status" id="status" aria-live="polite">
+        <span class="badge badge-sample" id="sample-badge" hidden>Sample data</span>
+        <span class="updated" id="updated"></span>
+      </div>
+      <p class="notice" id="stale-notice" hidden>Data may be stale: it was last updated more than 48 hours ago.</p>
+    </header>
+
+    <p class="message" id="loading">Loading odds…</p>
+    <p class="message message-error" id="error" role="alert" hidden></p>
+
+    <ol class="board" id="board" hidden></ol>
+
+    <footer class="footer">
+      <p>Model estimates, not betting advice.</p>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

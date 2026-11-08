@@ -1,0 +1,157 @@
+/* Colors live in variables so light and dark mode only change them in one place. */
+:root {
+  --bg: #f5f5f7;
+  --card: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --line: #e5e5ea;
+  --accent: #0a6cff;
+  --bar-track: #ececf0;
+  --up: #1a8f3c;
+  --down: #d1342b;
+  --warn-bg: #fff4d6;
+  --warn-text: #7a5600;
+  --error-bg: #fde8e7;
+  --error-text: #a3231c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --card: #1c1c1e;
+    --text: #f5f5f7;
+    --muted: #98989d;
+    --line: #2c2c2e;
+    --accent: #4d96ff;
+    --bar-track: #2c2c2e;
+    --up: #34c759;
+    --down: #ff6961;
+    --warn-bg: #3a2f10;
+    --warn-text: #ffd479;
+    --error-bg: #3b1513;
+    --error-text: #ff9a94;
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* Make the hidden attribute always win, even over rules like .badge { display: inline-block }. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 16px 56px;
+}
+
+.header { margin-bottom: 24px; }
+
+h1 {
+  margin: 0;
+  font-size: clamp(28px, 6vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.season { margin: 4px 0 12px; color: var(--muted); font-size: 17px; }
+
+.status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 14px; color: var(--muted); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.badge-sample { background: var(--warn-bg); color: var(--warn-text); }
+
+.notice, .message {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+.notice { background: var(--warn-bg); color: var(--warn-text); }
+.message { color: var(--muted); padding-left: 0; }
+.message-error { background: var(--error-bg); color: var(--error-text); padding-left: 14px; }
+
+/* The board: one card containing all rows. */
+.board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--card);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.row + .row { border-top: 1px solid var(--line); }
+
+.row-button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 84px;
+  grid-template-areas:
+    "rank name  prob"
+    "rank bar   change";
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 6px;
+  width: 100%;
+  padding: 14px 16px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.row-button:hover { background: var(--bg); }
+.row-button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.rank { grid-area: rank; color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+.name { grid-area: name; font-size: 17px; font-weight: 600; }
+.name small { margin-left: 6px; color: var(--muted); font-size: 13px; font-weight: 400; }
+.prob { grid-area: prob; font-size: 24px; font-weight: 700; letter-spacing: -0.01em; text-align: right; font-variant-numeric: tabular-nums; }
+
+.bar-track { grid-area: bar; height: 6px; background: var(--bar-track); border-radius: 3px; overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s ease; }
+
+.change { grid-area: change; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.change.up { color: var(--up); }
+.change.down { color: var(--down); }
+
+/* Drill-down panel */
+.detail { padding: 4px 16px 16px 56px; }
+.detail[hidden] { display: none; }
+.detail-meta { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+.inputs { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.inputs th, .inputs td { padding: 6px 0; text-align: right; border-bottom: 1px solid var(--line); }
+.inputs th:first-child, .inputs td:first-child { text-align: left; }
+.inputs thead th { color: var(--muted); font-weight: 500; font-size: 12px; }
+.inputs tbody th { font-weight: 500; }
+.notes { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+
+.footer { margin-top: 24px; color: var(--muted); font-size: 13px; text-align: center; }
+
+@media (max-width: 480px) {
+  .detail { padding-left: 16px; }
+  .prob { font-size: 21px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
