@@ -127,9 +127,11 @@ nba-title-odds/
 5. `title_prob_i = exp(composite_i / T) / Σ_j exp(composite_j / T)`.
 6. `T` (temperature) starts at 0.6 and is tuned on the backtest so the spread looks like a real market (favorite roughly 15-30% in-season; sharper late in the year).
 
-### 6.4 v1 upgrade: playoff simulation (later)
+### 6.4 v1 upgrade: playoff simulation (built, not yet live)
 
-Convert composite to a strength rating, project final standings, seed the bracket using the 6 seeds + play-in format, simulate 10,000+ playoff brackets with a logistic single-game model that includes home court, and report title % as share of simulations won. Output goes into the same `odds.json`.
+`pipeline/sim.py` converts the composite to a strength in points of margin (`MARGIN_PER_Z x composite`, `MARGIN_PER_Z = 3.3`), adds per-run rating noise (sd `3.0 x sqrt(20 / (games + 20))` points), plays the remaining regular-season schedule with a logistic single-game model (`p_home = 1 / (1 + exp(-(r_home - r_away + 2.5) / 6.5))`), ranks each conference (random tie-breaks), runs the 2020-21 play-in for seeds 7-10, then best-of-7 series (home court 2-2-1-1-1) through the Finals. Title % is the share of 20,000 runs won, rounded with `model.round_probs`. It can start from a bracket with series in progress (eliminated teams get exactly 0). A daily seed from `pipeline/seed.py` (SHA-256 of date, season, model version) makes a re-run reproducible.
+
+Status: **not wired into `build_odds.py` or `odds.json`** (the shape is unchanged; the softmax is still the headline). Constants live in `pipeline/config.py`; `MARGIN_PER_Z` was fitted once on 2026-11-08 to the softmax's title probabilities, with `python pipeline/calibrate_sim.py` (offline script). Evidence and the comparison with the softmax on 26 seasons: `docs/simulation-report.md` (the simulation is indistinguishable from the softmax out of sample). `pipeline/schedule.py` reads whole monthly results pages (played and unplayed games, regular season / play-in / playoffs).
 
 ### 6.5 Backtest (Phase 6)
 
@@ -267,6 +269,7 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 | Nov 8, 2026 | Added `numpy` as a dependency (backtest fitting only; not used by the daily build) |
 | Nov 8, 2026 | `prob_change_1d` is null on the first real run, then compares with the previous committed file (real history is Phase 7) |
 | Nov 8, 2026 | Phase 7: odds history lives inside `odds.json` (`history_dates` plus a per-team `history`, last 30 days, carried forward from the previous file; no separate history file); `prob_change_1d` now comes from it and is null if the earlier entry is more than 3 days old |
+| Nov 8, 2026 | Phase 7 (offline part): playoff simulation built in `pipeline/sim.py` with `MARGIN_PER_Z = 3.3` fitted to today's softmax; 26-season backtest shows it indistinguishable from the softmax (log loss 1.84 vs 1.91, s.e. of the difference 0.07). Not live; headline stays the softmax until the owner decides (`docs/simulation-report.md`) |
 
 ## 14. Open questions
 
