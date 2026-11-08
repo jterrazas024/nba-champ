@@ -249,10 +249,16 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 | Nov 7, 2026 | Start with Phase 0 |
 | Nov 8, 2026 | Phase 3: Basketball-Reference is the data source (works from Actions); do not use stats.nba.com or cdn.nba.com; never evade bot protection |
 | Nov 8, 2026 | Added `lxml` as a dependency (reads Basketball-Reference's HTML tables) |
+| Nov 8, 2026 | Phase 4: drop clutch and core net rating; renormalize the remaining weights (net rating 38, star power 25, recent form 10, star availability 10, rotation availability 5, each divided by 88) |
+| Nov 8, 2026 | Preseason prior: last season's net rating regressed toward the league mean |
+| Nov 8, 2026 | Net rating = NRtg + SOS ramped in as `min(1, games/40)` (raw SRS is too noisy early); prior regressed to 70% |
+| Nov 8, 2026 | v0 uses minutes/games thresholds for stars; no early-season BPM shrinkage |
+| Nov 8, 2026 | Star injury factors: Out For Season x0.25, Out x0.6, Day To Day x0.9 (config values); an injured star still counts in star power, with a note |
+| Nov 8, 2026 | `odds.json` keeps all 7 input keys; dropped inputs have weight 0.0 and null values (no schema change) |
+| Nov 8, 2026 | After the regular season ends, v0 stops refreshing (no-op) until the Phase 7 playoff simulation |
+| Nov 8, 2026 | `prob_change_1d` is null on the first real run, then compares with the previous committed file (real history is Phase 7) |
 
 ## 14. Open questions
 
-- Clutch: no usable source for true clutch splits. Use a close-game proxy from final scores, or drop it and renormalize? (Decide in Phase 4)
 - Is one successful Actions run enough? Re-check after the first week of scheduled runs; Cloudflare can change its mind.
-- Preseason prior: last season's net rating regressed to the mean, or the preseason betting market? (Decide in Phase 4)
 - Daily refresh time, and whether to refresh more often on game days.
