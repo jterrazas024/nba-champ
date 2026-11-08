@@ -219,7 +219,7 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 
 ## 9. Automation
 
-- **Workflow:** `.github/workflows/refresh.yml`, triggers: daily cron (pick an off-peak time after games finish, e.g., 10:00 UTC) and `workflow_dispatch` for manual runs.
+- **Workflow:** `.github/workflows/refresh.yml`, triggers: daily cron (pick an off-peak time after games finish, 10:17 UTC, an off-peak minute because GitHub delays or drops runs at the top of the hour) and `workflow_dispatch` for manual runs.
 - **Steps:** check out the repo → set up Python → install requirements → run tests → run `build_odds.py` → if `odds.json` changed, commit and push to `main`.
 - **Failure behavior:** the job fails visibly (email from GitHub) and leaves the last good `odds.json` in place. Never commit a file that fails validation.
 - **Permissions:** the workflow needs `contents: write` to push the update.

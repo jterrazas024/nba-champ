@@ -5,7 +5,7 @@ name: Refresh odds
 
 on:
   schedule:
-    - cron: "0 10 * * *"   # every day at 10:00 UTC
+    - cron: "17 10 * * *"  # every day at 10:17 UTC (off-peak minute; GitHub delays or drops runs at the top of the hour)
   workflow_dispatch:        # adds a "Run workflow" button in the Actions tab
 
 permissions:
