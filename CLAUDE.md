@@ -4,7 +4,7 @@ Project rules for Claude Code. Read this first every session. Full scope and tec
 
 ## What this project is
 
-A live website that shows each NBA team's probability of winning the 2026-27 championship (Polymarket-style odds board). A Python pipeline computes the odds from public NBA stats and writes `data/odds.json`. A static HTML/CSS/JS site on GitHub Pages renders that file. A scheduled GitHub Action refreshes the data daily.
+A live website that shows each NBA team's probability of winning the 2026-27 championship (a Polymarket/Kalshi-style odds dashboard with Apple-style restraint). A Python pipeline computes the odds from public NBA stats and writes `data/odds.json`. A static HTML/CSS/JS site on GitHub Pages renders that file. A scheduled GitHub Action refreshes the data daily.
 
 ## Working rules
 
@@ -66,6 +66,7 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 
 - Python: type hints on functions, short functions, docstrings that say what a function returns. Formulas get a comment pointing to the section of `SPEC.md` they implement.
 - JavaScript: plain ES modules-free script, `const`/`let`, no dependencies. Handle the "odds.json failed to load" case with a visible message.
+- Charts: hand-built SVG in `charts.js` (no libraries). One color per series, thin bars, hover/keyboard tooltips, and a table view for each chart.
 - CSS: system font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Text", ...`), CSS variables for colors, light and dark via `prefers-color-scheme`.
 - Prefer clarity over cleverness.
 

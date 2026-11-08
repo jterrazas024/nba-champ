@@ -165,12 +165,14 @@ Rules: 30 teams; `title_prob` sums to 1.0 (±1e-6); `rank` is 1-30 by `title_pro
 
 ## 8. Site specification
 
-- **Odds board (home):** one row per team: rank, name, big probability %, thin horizontal bar, ▲/▼ change since yesterday. Sorted by probability. Clear page title, "Last updated" time (from `generated_at`), and a one-line disclaimer ("Model estimates, not betting advice").
-- **Drill-down:** clicking a row expands a panel with each input (value, league percentile, contribution to the final score) and any notes (e.g., clutch regression flag).
-- **Style:** Apple-like and minimal: system font stack, generous white space, rounded cards, one accent color, subtle transitions, light and dark mode via `prefers-color-scheme`. Polymarket-like clarity: big numbers, no clutter.
-- **Responsive:** works on phone and desktop.
+- **Layout:** a wide dashboard (up to about 1320px). A sticky top bar shows the title, season, "Sample data" badge, and "Last updated" time. Below it, headline tiles: the favorite (the one large hero number), top-3 combined probability, and the number of teams above 5%. Then a chart card (about two thirds of the width) next to a team panel (about one third, sticky). On screens under 1000px everything stacks in one column.
+- **Chart tabs** (all hand-built SVG, no charting library): **Odds** (title probability, all 30 teams, sorted), **Net rating** (with a switch to core net rating), **Star power**, **Recent form**, **Availability** (switch between star and rotation), **Clutch**, and **Contenders** (net rating against star power, dot size = title probability). The tab is shared in the URL hash, e.g. `#net-rating`.
+- **Chart rules:** one color for all bars (no rank coloring); the selected team is emphasized by dimming the rest; negative values are gray bars left of the zero line; bars are thin with a rounded tip; values are labelled at the bar tip; gridlines are solid hairlines. Every chart has a hover/keyboard tooltip (value, team, record, percentile) and a **Table** view with the same numbers. Daily history charts wait until the pipeline stores snapshots (Phase 7).
+- **Team panel:** shows the selected team (the favorite when none is selected): title probability, rank, change since yesterday, and each model input with its value, percentile meter, weight, and contribution, plus notes (e.g., clutch regression flag). Click a bar, dot, or table row to select; click again, "Clear selection", or Escape to clear.
+- **Style:** Apple-like restraint (system font stack, generous white space, rounded cards, subtle transitions) combined with a prediction-market dashboard feel (Polymarket/Kalshi: wide layout, big numbers, tabs, green accent). Light and dark mode via `prefers-color-scheme`.
+- **Responsive:** works on phone and desktop; on narrow screens bars show 3-letter team codes.
 - **Failure states:** if `odds.json` fails to load, show a clear message; if `is_sample` is true, show a visible "Sample data" badge; if `generated_at` is more than 48 hours old, show a "Data may be stale" notice.
-- **Accessibility:** semantic HTML, keyboard-operable rows, sufficient contrast, bars have text equivalents.
+- **Accessibility:** semantic HTML, keyboard-operable tabs, bars, dots, and rows, sufficient contrast, and a table view equivalent for every chart (no value is available only on hover).
 
 ---
 

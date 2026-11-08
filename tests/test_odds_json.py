@@ -55,3 +55,19 @@ def test_is_sample_flag_is_a_boolean(odds):
 
 def test_file_is_under_100_kb():
     assert ODDS_PATH.stat().st_size < 100 * 1024
+
+
+def test_inputs_have_the_fields_the_charts_read(odds):
+    """The site draws charts from each team's inputs, so every input needs these fields.
+
+    A missing input may be null (SPEC.md section 7); any input that is present must be
+    a known model input with a numeric value, a 0-100 percentile, and a contribution.
+    """
+    for team in odds["teams"]:
+        for name, entry in team["inputs"].items():
+            assert name in odds["weights"], f"{team['id']}: unknown input {name}"
+            if entry is None:
+                continue
+            assert isinstance(entry["value"], (int, float))
+            assert 0 <= entry["percentile"] <= 100
+            assert isinstance(entry["contribution"], (int, float))

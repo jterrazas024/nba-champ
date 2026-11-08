@@ -8,26 +8,55 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="page">
-    <header class="header">
-      <h1>NBA Championship Odds</h1>
-      <p class="season" id="season"></p>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <h1>NBA Championship Odds</h1>
+        <span class="season" id="season"></span>
+      </div>
       <div class="status" id="status" aria-live="polite">
         <span class="badge badge-sample" id="sample-badge" hidden>Sample data</span>
         <span class="updated" id="updated"></span>
       </div>
-      <p class="notice" id="stale-notice" hidden>Data may be stale: it was last updated more than 48 hours ago.</p>
-    </header>
+    </div>
+  </header>
 
+  <main class="page">
+    <p class="notice" id="stale-notice" hidden>Data may be stale: it was last updated more than 48 hours ago.</p>
     <p class="message" id="loading">Loading odds…</p>
     <p class="message message-error" id="error" role="alert" hidden></p>
 
-    <ol class="board" id="board" hidden></ol>
+    <div id="app" hidden>
+      <section class="kpis" id="kpis" aria-label="Headline numbers"></section>
+
+      <div class="layout">
+        <section class="card chart-card" aria-labelledby="chart-title">
+          <div class="tabs" id="tabs" role="tablist" aria-label="Chart views"></div>
+          <div class="card-head">
+            <div class="card-titles">
+              <h2 id="chart-title"></h2>
+              <p class="card-sub" id="chart-sub"></p>
+            </div>
+            <div class="controls">
+              <div class="segmented" id="metric-switch" role="group" aria-label="Metric"></div>
+              <div class="segmented" id="view-switch" role="group" aria-label="Chart or table view"></div>
+            </div>
+          </div>
+          <div class="chart-body" id="chart-body"></div>
+          <p class="caption" id="chart-caption"></p>
+        </section>
+
+        <aside class="card detail" id="detail" aria-live="polite"></aside>
+      </div>
+    </div>
 
     <footer class="footer">
       <p>Model estimates, not betting advice.</p>
     </footer>
   </main>
+
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+  <script src="charts.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
