@@ -25,6 +25,7 @@ A live website that shows each NBA team's probability of winning the 2026-27 cha
 - Check the plan without sending requests: `python pipeline/spike/probe_sources.py --dry-run`
 - Run the refresh Action by hand: `gh workflow run refresh.yml`, then `gh run list --workflow refresh.yml`
 - Run tests: `pytest`
+- Replay a past postseason offline at chosen dates (cached pages, no network): `python pipeline/replay_playoffs.py 2025 2025-04-13 2025-05-10 --pages data/raw/playoff_replay data/raw/backtest`
 - Calibrate/score the playoff simulation (offline, about 90 seconds, not part of the daily build): `python pipeline/calibrate_sim.py`
 - Backtest (not part of the daily build): `python pipeline/backtest/fetch_history.py` (one-off, about 140 requests, cached in `data/raw/backtest/`), then `python pipeline/backtest/run_backtest.py`
 - Preview site: `python -m http.server 8000` then open http://localhost:8000
@@ -40,6 +41,7 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 
 ## Model rules
 
+- After game 82 the build is in playoff mode (SPEC.md section 6.6): `title_prob` comes from the simulation conditioned on the play-in and series played; eliminated teams are exactly 0; the 15-point daily guard does not apply there (a no-revival check does). Read the postseason through `pipeline/playoffs.py`; never publish a guessed bracket.
 - Starting weights live in one place (`pipeline/config.py`) and must sum to 1.0. In points: net rating 38, star power 25, recent form 10, star availability 10, rotation availability 5, divided by 88. Clutch and core net rating are dropped (weight 0; no usable data source).
 - If an input is not available, renormalize the remaining weights rather than filling with fake numbers (per team if just that team lacks it).
 - Early season: blend current-season stats with a preseason prior using `w_current = games_played / (games_played + 20)`.

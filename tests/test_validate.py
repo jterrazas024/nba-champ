@@ -53,3 +53,30 @@ def test_simulation_fields_are_optional_and_checked_when_present():
         assert any("sim.runs" in p for p in validate_odds(bad))
     partial = _with_sim(); del partial["teams"][0]["sim_prob"]
     assert any("sim_prob" in p for p in validate_odds(partial))
+
+
+def _playoff_file() -> dict:
+    """The real file turned into a valid playoff-mode file: team 0 is champion, everyone else out."""
+    odds = _with_sim()
+    odds["phase"], odds["headline_source"] = "complete", "simulation"
+    for i, team in enumerate(odds["teams"]):
+        team["title_prob"] = team["sim_prob"] = 1.0 if i == 0 else 0.0
+        team["status"] = "champion" if i == 0 else "eliminated"
+        team["rank"] = i + 1
+    return odds
+
+
+def test_playoff_mode_fields_are_checked_when_present():
+    assert validate_odds(_playoff_file()) == []
+    bad = _playoff_file(); bad["teams"][1]["status"] = "alive"; bad["teams"][1]["title_prob"] = 0.0
+    assert validate_odds(bad) == []                                  # alive with zero odds is allowed (lost by chance, not yet marked)
+    bad = _playoff_file(); bad["teams"][0]["sim_prob"] = 0.5
+    assert any("equal sim_prob" in p for p in validate_odds(bad))
+    bad = _playoff_file(); bad["teams"][1]["status"] = "champion"
+    assert any("more than one champion" in p for p in validate_odds(bad))
+    bad = _playoff_file(); bad["phase"] = "playoffs"
+    assert any("phase is not complete" in p for p in validate_odds(bad))
+    bad = _playoff_file(); bad["phase"] = "later"
+    assert any("phase must be" in p for p in validate_odds(bad))
+    bad = _playoff_file(); del bad["teams"][5]["status"]
+    assert any("no status" in p for p in validate_odds(bad))

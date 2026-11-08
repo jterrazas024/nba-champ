@@ -174,3 +174,67 @@ def full_schedule(seed: int = 0) -> list[tuple[int, int]]:
         h, a = rng.choice(30, 2, replace=False)
         games.append((int(h), int(a)))
     return games
+
+
+# ---------- a fake postseason (pipeline/playoffs.py) ----------
+
+def seeded(conference: int, n: int) -> str:
+    """Team id of the n-th best team (1 = best) of a conference (0 = East, 1 = West) by strength.
+
+    The synthetic ratings page orders standings the same way (wins, then margin), so this is also the
+    n-th seed before the play-in."""
+    name = ("East", "West")[conference]
+    ids = [t.id for t in sorted(TEAMS, key=lambda t: -STRENGTH[t.id]) if t.conference == name]
+    return ids[n - 1]
+
+
+def post_row(day: date, away: str, home: str, away_pts: int | None, home_pts: int | None, note: str = "") -> list[str]:
+    """One results-table row; scores of None mean the game is not played yet."""
+    score = lambda v: "" if v is None else str(v)   # noqa: E731
+    return [f"{day:%a, %b} {day.day}, {day.year}", config.TEAM_BY_ID[away].name, score(away_pts),
+            config.TEAM_BY_ID[home].name, score(home_pts), note]
+
+
+def playin_row(day: date, home: str, away: str, home_wins: bool | None) -> list[str]:
+    """A play-in game (`home_wins` None = not played)."""
+    if home_wins is None:
+        return post_row(day, away, home, None, None, "Play-In Game")
+    return post_row(day, away, home, 100 if home_wins else 110, 110 if home_wins else 100, "Play-In Game")
+
+
+def series_rows(hi: str, lo: str, hi_wins: int, lo_wins: int, start: date) -> list[list[str]]:
+    """The finished games of a best-of-7 that stands at hi_wins-lo_wins, one game every two days from `start`.
+
+    `hi` hosts games 1, 2, 5 and 7. The loser's wins come first, so the series is only over at the last game."""
+    results = [False] * lo_wins + [True] * hi_wins
+    rows = []
+    for g, hi_won in enumerate(results):
+        home, away = (hi, lo) if g in (0, 1, 4, 6) else (lo, hi)
+        home_won = (home == hi) == hi_won
+        day = start + timedelta(days=2 * g)
+        rows.append(post_row(day, away, home, 100 if home_won else 110, 110 if home_won else 100))
+    return rows
+
+
+def postseason_pages(rows: list[list[str]], end_year: int = 2027, regular_days: int = 20) -> dict[str, str]:
+    """Results pages (path -> html) for April, May and June holding `rows` split by month.
+
+    The April page also holds `regular_days` days of finished regular-season games (so recent form has
+    20 games per team). Rows are dated in `end_year`."""
+    head = ["Date", "Visitor/Neutral", "PTS", "Home/Neutral", "PTS.1", "Notes"]
+    by_month = {"Apr": [], "May": [], "Jun": []}
+    for row in rows:
+        by_month[row[0].split(",")[1].split()[0]].append(row)
+    regular = games_page(date(end_year, 3, 24), regular_days, extra_rows=by_month["Apr"])
+    return {
+        f"/leagues/NBA_{end_year}_games-april.html": regular,
+        f"/leagues/NBA_{end_year}_games-may.html": table("schedule", head, by_month["May"]),
+        f"/leagues/NBA_{end_year}_games-june.html": table("schedule", head, by_month["Jun"]),
+    }
+
+
+def playoff_league_pages(rows: list[list[str]], end_year: int = 2027) -> dict[str, str]:
+    """Every page a playoff-mode build asks for: the 82-game league plus the postseason pages for `rows`."""
+    pages = league_pages(games=82, end_year=end_year)
+    pages.update(postseason_pages(rows, end_year))
+    return pages

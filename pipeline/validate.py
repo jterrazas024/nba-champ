@@ -9,6 +9,9 @@ MAX_BYTES = 100 * 1024  # SPEC.md section 7: file stays under 100 KB
 EXPECTED_TEAMS = 30
 MAX_HISTORY_DAYS = 30
 TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+PHASES = ("regular_season", "playin", "playoffs", "complete")
+HEADLINE_SOURCES = ("softmax", "simulation")
+STATUSES = ("alive", "eliminated", "champion")
 
 
 def validate_odds(odds: dict) -> list[str]:
@@ -52,6 +55,7 @@ def validate_odds(odds: dict) -> list[str]:
 
     problems += _check_history(odds)
     problems += check_sim(odds)
+    problems += _check_playoff_mode(odds)
 
     if len(json.dumps(odds, indent=1).encode()) >= MAX_BYTES:
         problems.append("file would be 100 KB or larger")
@@ -123,4 +127,45 @@ def check_sim(odds: dict) -> list[str]:
             problems.append(f"{tid} sim.seed_avg must be null or a number between 1 and 15")
     if probs and (len(probs) != len(odds["teams"]) or abs(sum(probs) - 1.0) > 1e-6):
         problems.append(f"sim_prob values sum to {sum(probs):.6f} over {len(probs)} teams, not 1.0 over every team")
+    return problems
+
+
+def _check_playoff_mode(odds: dict) -> list[str]:
+    """Checks for the optional playoff-mode fields (SPEC.md section 6.6): `phase`, `headline_source`, per-team
+    `status` and `softmax_prob`. When the headline comes from the simulation, title_prob must equal sim_prob,
+    a team that is out must have exactly 0, and a champion exactly 1.0 (one champion, and only in the
+    "complete" phase). They only run when those fields are present."""
+    problems: list[str] = []
+    phase, source = odds.get("phase"), odds.get("headline_source")
+    if phase is not None and phase not in PHASES:
+        problems.append(f"phase must be one of {', '.join(PHASES)}")
+    if source is not None and source not in HEADLINE_SOURCES:
+        problems.append(f"headline_source must be one of {', '.join(HEADLINE_SOURCES)}")
+    champions = []
+    for team in odds["teams"]:
+        tid = team.get("id")
+        status = team.get("status")
+        if status is not None and status not in STATUSES:
+            problems.append(f"{tid} status must be one of {', '.join(STATUSES)}")
+        if "softmax_prob" in team and not (isinstance(team["softmax_prob"], (int, float)) and 0 <= team["softmax_prob"] <= 1):
+            problems.append(f"{tid} softmax_prob must be a number between 0 and 1")
+        if status == "champion":
+            champions.append(tid)
+        if source == "simulation":
+            if team.get("sim_prob") != team.get("title_prob"):
+                problems.append(f"{tid} title_prob must equal sim_prob when the headline comes from the simulation")
+            if status == "eliminated" and team.get("title_prob") != 0:
+                problems.append(f"{tid} is eliminated but has title odds")
+            if status == "champion" and team.get("title_prob") != 1:
+                problems.append(f"{tid} is the champion but its title_prob is not 1.0")
+            if status is None:
+                problems.append(f"{tid} has no status in playoff mode")
+    if len(champions) > 1:
+        problems.append("more than one champion")
+    if phase == "complete" and len(champions) != 1:
+        problems.append("phase is complete but there is not exactly one champion")
+    if phase is not None and phase != "complete" and champions:
+        problems.append("a champion is named but phase is not complete")
+    if source == "simulation" and phase in (None, "regular_season"):
+        problems.append("headline_source is simulation but phase is not a playoff phase")
     return problems
