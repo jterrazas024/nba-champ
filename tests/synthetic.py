@@ -1,0 +1,104 @@
+"""A fake 30-team league, rendered as Basketball-Reference-shaped pages, for end-to-end tests.
+
+Team i (0 to 29) has strength s = i - 14.5, so the order of the teams is known in advance. Nothing
+here is real data, and a FakeClient serves the pages so no network is used.
+"""
+from datetime import date, timedelta
+
+from pipeline import config
+
+TEAMS = config.TEAMS
+STRENGTH = {t.id: i - 14.5 for i, t in enumerate(TEAMS)}
+PLAYERS_PER_TEAM = 12
+
+
+def table(table_id: str, headers: list[str], rows: list[list[str]]) -> str:
+    head = "".join(f"<th>{h}</th>" for h in headers)
+    body = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in row) + "</tr>" for row in rows)
+    return f'<html><body><table id="{table_id}"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></body></html>'
+
+
+def ratings_page(games: int) -> str:
+    rows = []
+    for t in TEAMS:
+        s = STRENGTH[t.id]
+        wins = max(0, min(games, round(games / 2 + s / 6)))
+        rows.append([t.name, str(wins), str(games - wins), f"{s / 2:.2f}", "0.00", f"{s / 2:.2f}",
+                     f"{113 + s / 3:.1f}", f"{113 - s / 3:.1f}", f"{2 * s / 3:.1f}"])
+    rows.append(["League Average", "", "", "0.00", "0.00", "0.00", "113.0", "113.0", ""])
+    return table("advanced-team", ["Team", "W", "L", "MOV", "SOS", "SRS", "ORtg", "DRtg", "NRtg"], rows)
+
+
+def player_id(team, j: int) -> str:
+    return f"{team.br_code.lower()}p{j:02d}01"
+
+
+def players_page(games: int, current: bool, players_per_team: int = PLAYERS_PER_TEAM) -> str:
+    rows = []
+    for t in TEAMS:
+        for j in range(players_per_team):
+            g = games - (j % 3) if current else 82 - (j % 3) * 3
+            minutes = 30 * g - j * 60 if current else 2500 - j * 200
+            bpm = STRENGTH[t.id] / 3 - 0.8 * j
+            pid = player_id(t, j)
+            rows.append([f'<a href="/players/{pid[0]}/{pid}.html">{t.id} Player {j}</a>', t.br_code,
+                         str(g), str(minutes), f"{bpm:.1f}"])
+    rows.append(["League Average", "", "", "", "0.0"])
+    return table("advanced", ["Player", "Team", "G", "MP", "BPM"], rows)
+
+
+def injuries_page() -> str:
+    first, second = TEAMS[29], TEAMS[10]
+    rows = [
+        [f'<a href="/players/x/{player_id(first, 0)}.html">{first.id} Player 0</a>', first.name,
+         "Sat, Nov 7, 2026", "Out (Knee) - will be re-evaluated in six weeks."],
+        [f'<a href="/players/x/{player_id(second, 1)}.html">{second.id} Player 1</a>', second.name,
+         "Fri, Nov 6, 2026", "Day To Day (Ankle) - sore."],
+    ]
+    return table("injuries", ["Player", "Team", "Update", "Description"], rows)
+
+
+def games_page(start: date, days: int, skip_team: str | None = None) -> str:
+    """`days` days of games starting at `start`: every team plays once a day (circle method)."""
+    ids = [t.id for t in TEAMS]
+    rows = []
+    for d in range(days):
+        rotated = ids[d % 30:] + ids[:d % 30]
+        day = start + timedelta(days=d)
+        for k in range(15):
+            home, away = rotated[k], rotated[29 - k]
+            if skip_team in (home, away):
+                continue
+            margin = round((STRENGTH[home] - STRENGTH[away]) / 4) + 3
+            rows.append([f"{day:%a, %b} {day.day}, {day.year}", config.TEAM_BY_ID[away].name, str(100),
+                         config.TEAM_BY_ID[home].name, str(100 + margin), ""])
+    return table("schedule", ["Date", "Visitor/Neutral", "PTS", "Home/Neutral", "PTS.1", "Notes"], rows)
+
+
+def league_pages(games: int = 24, skip_form_team: str | None = None, players_per_team: int = PLAYERS_PER_TEAM,
+                 end_year: int = 2027) -> dict[str, str]:
+    """Every page a build asks for, keyed by path. `games` is how many each team has played."""
+    return {
+        f"/leagues/NBA_{end_year}.html": ratings_page(games),
+        f"/leagues/NBA_{end_year - 1}.html": ratings_page(82),
+        f"/leagues/NBA_{end_year}_advanced.html": players_page(games, True, players_per_team),
+        f"/leagues/NBA_{end_year - 1}_advanced.html": players_page(82, False),
+        f"/leagues/NBA_{end_year - 2}_advanced.html": players_page(82, False),
+        "/friv/injuries.fcgi": injuries_page(),
+        f"/leagues/NBA_{end_year}_games-october.html": games_page(date(2026, 10, 20), min(games, 12), skip_form_team),
+        f"/leagues/NBA_{end_year}_games-november.html": games_page(date(2026, 11, 1), max(0, games - 12) or 1, skip_form_team),
+    }
+
+
+class FakeClient:
+    """Stands in for BRClient: serves pages from a dict and records what was asked for."""
+
+    def __init__(self, pages: dict[str, str]):
+        self.pages = pages
+        self.paths: list[str] = []
+        self.requests_made = 0
+
+    def get_html(self, path: str, cache_name: str) -> str:
+        self.paths.append(path)
+        self.requests_made += 1
+        return self.pages[path]
