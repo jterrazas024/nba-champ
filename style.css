@@ -261,6 +261,14 @@ h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
 .meter-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease; }
 .input-sub { color: var(--muted); font-size: 12px; }
 
+/* Sparkline: one thin line in the accent color plus an end dot */
+.sparkline { display: block; overflow: visible; }
+.spark-line { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.spark-dot { fill: var(--accent); }
+.detail-spark { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; color: var(--muted); font-size: 12px; }
+.data-table td.spark-cell { padding-top: 4px; padding-bottom: 4px; }
+.data-table td.spark-cell .sparkline { margin-left: auto; }
+
 .notes { margin: 12px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
 .link-button { margin-top: 14px; padding: 0; background: none; border: 0; color: var(--accent-text); font-size: 13px; font-weight: 500; cursor: pointer; }
 .link-button:hover { text-decoration: underline; }

@@ -334,5 +334,40 @@ const Charts = (() => {
     container.appendChild(svg);
   }
 
-  return { drawBarChart, drawScatter, hideTooltip: () => tooltip.hide() };
+  // ---- Sparkline: a tiny trend line (one polyline plus an end dot) ----
+  // `values` are probabilities (0 to 1), oldest first; `dates` are matching "YYYY-MM-DD" strings.
+  // Returns an <svg> element, or null when there are fewer than 3 usable points (nothing to show).
+  // Points are spaced by calendar date, so a missed day shows up as a gap in the line.
+  function sparkline(values, dates, opts) {
+    const o = Object.assign({ width: 96, height: 24 }, opts);
+    if (!Array.isArray(values) || !Array.isArray(dates) || values.length < 3 || values.length !== dates.length) return null;
+    if (!values.every((v) => typeof v === "number" && isFinite(v))) return null;
+    const days = dates.map((d) => Date.parse(d + "T00:00:00Z") / 86400000);
+    if (days.some((d) => isNaN(d))) return null;
+
+    const pad = 3; // room for the end dot
+    const min = Math.min.apply(null, values);
+    const max = Math.max.apply(null, values);
+    const first = days[0];
+    const spanX = days[days.length - 1] - first || 1;
+    const x = (i) => pad + ((days[i] - first) / spanX) * (o.width - 2 * pad);
+    const y = (v) => (max === min ? o.height / 2 : o.height - pad - ((v - min) / (max - min)) * (o.height - 2 * pad));
+    const points = values.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" ");
+
+    const calendarDays = Math.round(spanX) + 1;
+    const pct = (v) => (v * 100).toFixed(1) + "%";
+    const svg = svgEl("svg", {
+      class: "sparkline", width: o.width, height: o.height, viewBox: "0 0 " + o.width + " " + o.height,
+      role: "img",
+      "aria-label": "Title odds over the last " + calendarDays + " days: from " + pct(values[0]) + " to " + pct(values[values.length - 1]),
+    });
+    svg.appendChild(svgEl("polyline", { class: "spark-line", points: points }));
+    svg.appendChild(svgEl("circle", {
+      class: "spark-dot", cx: x(values.length - 1).toFixed(1), cy: y(values[values.length - 1]).toFixed(1), r: 2.5,
+    }));
+    svg.dataset.days = String(calendarDays);
+    return svg;
+  }
+
+  return { drawBarChart, drawScatter, sparkline, hideTooltip: () => tooltip.hide() };
 })();

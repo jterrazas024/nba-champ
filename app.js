@@ -36,6 +36,14 @@ function formatChange(delta) {
     : { text: "▼ " + points, cls: "down" };
 }
 
+// A team's recent title odds for the sparkline, or null when there is nothing worth drawing
+// (older odds.json files have no history; fewer than 3 points make no trend).
+function teamSparkline(team, opts) {
+  const dates = state.data && state.data.history_dates;
+  if (!Array.isArray(dates) || !Array.isArray(team.history)) return null;
+  return Charts.sparkline(team.history, dates, opts);
+}
+
 // ---------- What can be charted ----------
 
 const inputValue = (key) => (team) => {
@@ -383,12 +391,15 @@ function renderTable(body, tab) {
     const isOdds = key === "title_prob";
     columns.push("#", "Team", metric.label);
     columns.push(isOdds ? "Since yesterday" : "Percentile");
+    const anySpark = isOdds && state.teams.some((t) => teamSparkline(t));
+    if (anySpark) columns.push("Trend");
     rows = barRows(key).map((r, i) => {
       const input = r.team.inputs && r.team.inputs[key];
       const extra = isOdds
         ? formatChange(r.team.prob_change_1d || 0).text
         : input ? ordinal(input.percentile) : "n/a";
-      return { team: r.team, cells: [String(i + 1), r.name, metric.fmt(r.value), extra] };
+      return { team: r.team, cells: [String(i + 1), r.name, metric.fmt(r.value), extra],
+               spark: anySpark ? teamSparkline(r.team, { width: 72, height: 20 }) : undefined };
     });
   }
 
@@ -407,6 +418,11 @@ function renderTable(body, tab) {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectTeam(row.team.id); }
     });
     row.cells.forEach((text, i) => tr.appendChild(el("td", i < 2 ? "left" : "", text)));
+    if (row.spark !== undefined) {
+      const cell = el("td", "spark-cell");
+      if (row.spark) cell.appendChild(row.spark);
+      tr.appendChild(cell);
+    }
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
@@ -449,6 +465,14 @@ function renderDetail() {
   side.appendChild(changeEl);
   figures.appendChild(side);
   box.appendChild(figures);
+
+  const spark = teamSparkline(team);
+  if (spark) {
+    const sparkBox = el("div", "detail-spark");
+    sparkBox.appendChild(spark);
+    sparkBox.appendChild(el("span", "", "Last " + spark.dataset.days + " days"));
+    box.appendChild(sparkBox);
+  }
 
   box.appendChild(el("h3", "detail-heading", "What drives it"));
   const list = el("ul", "inputs");
