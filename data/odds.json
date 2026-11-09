@@ -1,8 +1,8 @@
 {
- "generated_at": "2026-11-08T14:38:08Z",
+ "generated_at": "2026-11-09T17:37:58Z",
  "season": "2026-27",
  "is_sample": false,
- "games_played_league_avg": 9.3,
+ "games_played_league_avg": 9.7,
  "model_version": "v0",
  "phase": "regular_season",
  "headline_source": "softmax",
@@ -17,7 +17,8 @@
   "clutch": 0.0
  },
  "history_dates": [
-  "2026-11-08"
+  "2026-11-08",
+  "2026-11-09"
  ],
  "teams": [
   {
@@ -25,54 +26,55 @@
    "name": "San Antonio Spurs",
    "conference": "West",
    "record": "8-2",
-   "title_prob": 0.232276,
+   "title_prob": 0.231395,
    "rank": 1,
-   "prob_change_1d": null,
+   "prob_change_1d": -0.0009,
    "history": [
-    0.232276
+    0.232276,
+    0.231395
    ],
-   "composite": 1.648,
+   "composite": 1.629,
    "inputs": {
     "net_rating": {
-     "value": 7.6,
-     "z": 1.57,
+     "value": 7.65,
+     "z": 1.55,
      "percentile": 97,
-     "contribution": 0.68
+     "contribution": 0.67
     },
     "star_power": {
-     "value": 9.86,
-     "z": 2.19,
+     "value": 10.0,
+     "z": 2.17,
      "percentile": 100,
-     "contribution": 0.622
+     "contribution": 0.617
     },
     "recent_form": {
      "value": 10.3,
      "z": 1.26,
-     "percentile": 97,
-     "contribution": 0.144
+     "percentile": 93,
+     "contribution": 0.143
     },
     "star_availability": {
      "value": 0.92,
-     "z": 1.08,
-     "percentile": 90,
-     "contribution": 0.123
+     "z": 1.01,
+     "percentile": 93,
+     "contribution": 0.115
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.99,
-     "z": 1.39,
+     "z": 1.49,
      "percentile": 93,
-     "contribution": 0.079
+     "contribution": 0.085
     },
     "clutch": null
    },
    "notes": [],
-   "sim_prob": 0.20975,
+   "sim_prob": 0.21025,
    "sim": {
-    "finals": 0.2925,
-    "conf_finals": 0.4711,
-    "make_playoffs": 0.9658,
-    "seed_avg": 2.68
+    "finals": 0.2879,
+    "conf_finals": 0.4631,
+    "make_playoffs": 0.9628,
+    "seed_avg": 2.71
    }
   },
   {
@@ -80,166 +82,55 @@
    "name": "Oklahoma City Thunder",
    "conference": "West",
    "record": "8-2",
-   "title_prob": 0.153357,
+   "title_prob": 0.151697,
    "rank": 2,
-   "prob_change_1d": null,
+   "prob_change_1d": -0.0017,
    "history": [
-    0.153357
+    0.153357,
+    0.151697
    ],
-   "composite": 1.398,
+   "composite": 1.376,
    "inputs": {
     "net_rating": {
-     "value": 8.17,
-     "z": 1.69,
+     "value": 8.21,
+     "z": 1.67,
      "percentile": 100,
-     "contribution": 0.731
+     "contribution": 0.719
     },
     "star_power": {
-     "value": 8.8,
-     "z": 1.75,
-     "percentile": 93,
-     "contribution": 0.498
+     "value": 8.84,
+     "z": 1.72,
+     "percentile": 90,
+     "contribution": 0.489
     },
     "recent_form": {
      "value": 8.0,
-     "z": 0.99,
-     "percentile": 83,
-     "contribution": 0.112
+     "z": 0.98,
+     "percentile": 86,
+     "contribution": 0.111
     },
     "star_availability": {
      "value": 0.81,
-     "z": 0.32,
-     "percentile": 55,
-     "contribution": 0.036
+     "z": 0.28,
+     "percentile": 48,
+     "contribution": 0.032
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.96,
-     "z": 0.37,
+     "z": 0.42,
      "percentile": 62,
-     "contribution": 0.021
+     "contribution": 0.024
     },
     "clutch": null
    },
    "notes": [],
-   "sim_prob": 0.1485,
+   "sim_prob": 0.1433,
    "sim": {
-    "finals": 0.2173,
-    "conf_finals": 0.3906,
-    "make_playoffs": 0.9464,
-    "seed_avg": 3.02
-   }
-  },
-  {
-   "id": "DET",
-   "name": "Detroit Pistons",
-   "conference": "East",
-   "record": "6-2",
-   "title_prob": 0.071468,
-   "rank": 3,
-   "prob_change_1d": null,
-   "history": [
-    0.071468
-   ],
-   "composite": 0.94,
-   "inputs": {
-    "net_rating": {
-     "value": 6.04,
-     "z": 1.25,
-     "percentile": 90,
-     "contribution": 0.541
-    },
-    "star_power": {
-     "value": 5.1,
-     "z": 0.24,
-     "percentile": 62,
-     "contribution": 0.067
-    },
-    "recent_form": {
-     "value": 9.38,
-     "z": 1.15,
-     "percentile": 90,
-     "contribution": 0.131
-    },
-    "star_availability": {
-     "value": 0.93,
-     "z": 1.16,
-     "percentile": 97,
-     "contribution": 0.131
-    },
-    "core_net_rating": null,
-    "rotation_availability": {
-     "value": 0.99,
-     "z": 1.24,
-     "percentile": 86,
-     "contribution": 0.07
-    },
-    "clutch": null
-   },
-   "notes": [
-    "Early season: only 8 games played, so net rating leans on last season"
-   ],
-   "sim_prob": 0.11155,
-   "sim": {
-    "finals": 0.2682,
-    "conf_finals": 0.447,
-    "make_playoffs": 0.9609,
-    "seed_avg": 2.67
-   }
-  },
-  {
-   "id": "LAL",
-   "name": "Los Angeles Lakers",
-   "conference": "West",
-   "record": "8-2",
-   "title_prob": 0.064547,
-   "rank": 4,
-   "prob_change_1d": null,
-   "history": [
-    0.064547
-   ],
-   "composite": 0.879,
-   "inputs": {
-    "net_rating": {
-     "value": 3.52,
-     "z": 0.73,
-     "percentile": 76,
-     "contribution": 0.316
-    },
-    "star_power": {
-     "value": 8.66,
-     "z": 1.7,
-     "percentile": 90,
-     "contribution": 0.482
-    },
-    "recent_form": {
-     "value": 7.7,
-     "z": 0.95,
-     "percentile": 79,
-     "contribution": 0.108
-    },
-    "star_availability": {
-     "value": 0.73,
-     "z": -0.21,
-     "percentile": 31,
-     "contribution": -0.024
-    },
-    "core_net_rating": null,
-    "rotation_availability": {
-     "value": 0.95,
-     "z": -0.04,
-     "percentile": 48,
-     "contribution": -0.002
-    },
-    "clutch": null
-   },
-   "notes": [],
-   "sim_prob": 0.0588,
-   "sim": {
-    "finals": 0.0959,
-    "conf_finals": 0.2109,
-    "make_playoffs": 0.8499,
-    "seed_avg": 4.14
+    "finals": 0.2081,
+    "conf_finals": 0.3804,
+    "make_playoffs": 0.9445,
+    "seed_avg": 3.03
    }
   },
   {
@@ -247,54 +138,169 @@
    "name": "Houston Rockets",
    "conference": "West",
    "record": "7-3",
-   "title_prob": 0.060024,
-   "rank": 5,
-   "prob_change_1d": null,
+   "title_prob": 0.062292,
+   "rank": 3,
+   "prob_change_1d": 0.0023,
    "history": [
-    0.060024
+    0.060024,
+    0.062292
    ],
-   "composite": 0.836,
+   "composite": 0.842,
    "inputs": {
     "net_rating": {
-     "value": 5.74,
-     "z": 1.19,
-     "percentile": 86,
-     "contribution": 0.514
+     "value": 5.79,
+     "z": 1.17,
+     "percentile": 90,
+     "contribution": 0.507
     },
     "star_power": {
-     "value": 5.98,
-     "z": 0.6,
+     "value": 6.14,
+     "z": 0.68,
      "percentile": 76,
-     "contribution": 0.17
+     "contribution": 0.193
     },
     "recent_form": {
      "value": 9.0,
-     "z": 1.11,
-     "percentile": 86,
-     "contribution": 0.126
+     "z": 1.1,
+     "percentile": 90,
+     "contribution": 0.125
     },
     "star_availability": {
      "value": 0.88,
-     "z": 0.82,
-     "percentile": 79,
-     "contribution": 0.094
+     "z": 0.76,
+     "percentile": 83,
+     "contribution": 0.087
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.91,
-     "z": -1.19,
-     "percentile": 14,
-     "contribution": -0.067
+     "z": -1.23,
+     "percentile": 10,
+     "contribution": -0.07
     },
     "clutch": null
    },
    "notes": [],
-   "sim_prob": 0.0538,
+   "sim_prob": 0.05555,
    "sim": {
-    "finals": 0.0889,
-    "conf_finals": 0.1948,
-    "make_playoffs": 0.8121,
+    "finals": 0.0901,
+    "conf_finals": 0.1962,
+    "make_playoffs": 0.8018,
     "seed_avg": 4.42
+   }
+  },
+  {
+   "id": "LAL",
+   "name": "Los Angeles Lakers",
+   "conference": "West",
+   "record": "9-2",
+   "title_prob": 0.057648,
+   "rank": 4,
+   "prob_change_1d": -0.0069,
+   "history": [
+    0.064547,
+    0.057648
+   ],
+   "composite": 0.795,
+   "inputs": {
+    "net_rating": {
+     "value": 3.68,
+     "z": 0.75,
+     "percentile": 76,
+     "contribution": 0.322
+    },
+    "star_power": {
+     "value": 9.06,
+     "z": 1.81,
+     "percentile": 93,
+     "contribution": 0.513
+    },
+    "recent_form": {
+     "value": 7.45,
+     "z": 0.91,
+     "percentile": 79,
+     "contribution": 0.104
+    },
+    "star_availability": {
+     "value": 0.59,
+     "z": -1.14,
+     "percentile": 14,
+     "contribution": -0.129
+    },
+    "core_net_rating": null,
+    "rotation_availability": {
+     "value": 0.94,
+     "z": -0.26,
+     "percentile": 34,
+     "contribution": -0.015
+    },
+    "clutch": null
+   },
+   "notes": [
+    "Luka Don\u010di\u0107 (star): Out"
+   ],
+   "sim_prob": 0.05485,
+   "sim": {
+    "finals": 0.0877,
+    "conf_finals": 0.1956,
+    "make_playoffs": 0.8271,
+    "seed_avg": 4.21
+   }
+  },
+  {
+   "id": "BOS",
+   "name": "Boston Celtics",
+   "conference": "East",
+   "record": "8-2",
+   "title_prob": 0.057608,
+   "rank": 5,
+   "prob_change_1d": 0.0116,
+   "history": [
+    0.046027,
+    0.057608
+   ],
+   "composite": 0.795,
+   "inputs": {
+    "net_rating": {
+     "value": 6.54,
+     "z": 1.33,
+     "percentile": 93,
+     "contribution": 0.573
+    },
+    "star_power": {
+     "value": 5.3,
+     "z": 0.35,
+     "percentile": 66,
+     "contribution": 0.101
+    },
+    "recent_form": {
+     "value": 10.7,
+     "z": 1.3,
+     "percentile": 97,
+     "contribution": 0.148
+    },
+    "star_availability": {
+     "value": 0.68,
+     "z": -0.53,
+     "percentile": 17,
+     "contribution": -0.06
+    },
+    "core_net_rating": null,
+    "rotation_availability": {
+     "value": 0.96,
+     "z": 0.59,
+     "percentile": 69,
+     "contribution": 0.033
+    },
+    "clutch": null
+   },
+   "notes": [],
+   "sim_prob": 0.0936,
+   "sim": {
+    "finals": 0.2337,
+    "conf_finals": 0.4095,
+    "make_playoffs": 0.9623,
+    "seed_avg": 2.73
    }
   },
   {
@@ -302,225 +308,169 @@
    "name": "Golden State Warriors",
    "conference": "West",
    "record": "7-3",
-   "title_prob": 0.04944,
+   "title_prob": 0.049577,
    "rank": 6,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.0001,
    "history": [
-    0.04944
+    0.04944,
+    0.049577
    ],
-   "composite": 0.719,
+   "composite": 0.705,
    "inputs": {
     "net_rating": {
-     "value": 1.73,
+     "value": 1.77,
      "z": 0.36,
-     "percentile": 55,
-     "contribution": 0.156
+     "percentile": 59,
+     "contribution": 0.155
     },
     "star_power": {
-     "value": 9.28,
-     "z": 1.95,
+     "value": 9.38,
+     "z": 1.93,
      "percentile": 97,
-     "contribution": 0.554
+     "contribution": 0.548
     },
     "recent_form": {
      "value": 5.0,
-     "z": 0.63,
+     "z": 0.62,
      "percentile": 62,
-     "contribution": 0.071
+     "contribution": 0.07
     },
     "star_availability": {
      "value": 0.79,
-     "z": 0.19,
-     "percentile": 45,
-     "contribution": 0.022
+     "z": 0.16,
+     "percentile": 41,
+     "contribution": 0.019
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.9,
-     "z": -1.48,
+     "z": -1.54,
      "percentile": 3,
-     "contribution": -0.084
+     "contribution": -0.088
     },
     "clutch": null
    },
    "notes": [],
-   "sim_prob": 0.04275,
+   "sim_prob": 0.04465,
    "sim": {
-    "finals": 0.074,
-    "conf_finals": 0.1639,
-    "make_playoffs": 0.7712,
+    "finals": 0.0747,
+    "conf_finals": 0.1636,
+    "make_playoffs": 0.7517,
     "seed_avg": 4.66
    }
   },
   {
-   "id": "BOS",
-   "name": "Boston Celtics",
+   "id": "DET",
+   "name": "Detroit Pistons",
    "conference": "East",
-   "record": "7-2",
-   "title_prob": 0.046027,
+   "record": "6-3",
+   "title_prob": 0.049207,
    "rank": 7,
-   "prob_change_1d": null,
+   "prob_change_1d": -0.0223,
    "history": [
-    0.046027
+    0.071468,
+    0.049207
    ],
-   "composite": 0.676,
+   "composite": 0.7,
    "inputs": {
     "net_rating": {
-     "value": 6.19,
-     "z": 1.28,
-     "percentile": 93,
-     "contribution": 0.554
+     "value": 5.66,
+     "z": 1.15,
+     "percentile": 86,
+     "contribution": 0.496
     },
     "star_power": {
-     "value": 4.78,
-     "z": 0.1,
-     "percentile": 59,
-     "contribution": 0.03
+     "value": 3.42,
+     "z": -0.37,
+     "percentile": 41,
+     "contribution": -0.106
     },
     "recent_form": {
-     "value": 9.67,
-     "z": 1.19,
-     "percentile": 93,
-     "contribution": 0.135
+     "value": 7.78,
+     "z": 0.95,
+     "percentile": 83,
+     "contribution": 0.108
     },
     "star_availability": {
-     "value": 0.68,
-     "z": -0.58,
-     "percentile": 24,
-     "contribution": -0.066
+     "value": 0.93,
+     "z": 1.08,
+     "percentile": 97,
+     "contribution": 0.123
     },
     "core_net_rating": null,
     "rotation_availability": {
-     "value": 0.96,
-     "z": 0.4,
-     "percentile": 66,
-     "contribution": 0.023
+     "value": 0.99,
+     "z": 1.39,
+     "percentile": 90,
+     "contribution": 0.079
     },
     "clutch": null
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
    ],
-   "sim_prob": 0.07275,
+   "sim_prob": 0.07575,
    "sim": {
-    "finals": 0.1898,
-    "conf_finals": 0.3552,
-    "make_playoffs": 0.936,
-    "seed_avg": 3.15
-   }
-  },
-  {
-   "id": "DEN",
-   "name": "Denver Nuggets",
-   "conference": "West",
-   "record": "5-3",
-   "title_prob": 0.044339,
-   "rank": 8,
-   "prob_change_1d": null,
-   "history": [
-    0.044339
-   ],
-   "composite": 0.654,
-   "inputs": {
-    "net_rating": {
-     "value": 3.32,
-     "z": 0.69,
-     "percentile": 72,
-     "contribution": 0.298
-    },
-    "star_power": {
-     "value": 6.3,
-     "z": 0.73,
-     "percentile": 83,
-     "contribution": 0.207
-    },
-    "recent_form": {
-     "value": 2.12,
-     "z": 0.28,
-     "percentile": 48,
-     "contribution": 0.032
-    },
-    "star_availability": {
-     "value": 0.92,
-     "z": 1.08,
-     "percentile": 93,
-     "contribution": 0.123
-    },
-    "core_net_rating": null,
-    "rotation_availability": {
-     "value": 0.94,
-     "z": -0.11,
-     "percentile": 41,
-     "contribution": -0.006
-    },
-    "clutch": null
-   },
-   "notes": [
-    "Early season: only 8 games played, so net rating leans on last season"
-   ],
-   "sim_prob": 0.04115,
-   "sim": {
-    "finals": 0.0667,
-    "conf_finals": 0.151,
-    "make_playoffs": 0.716,
-    "seed_avg": 4.83
+    "finals": 0.1951,
+    "conf_finals": 0.3547,
+    "make_playoffs": 0.9335,
+    "seed_avg": 3.28
    }
   },
   {
    "id": "MIN",
    "name": "Minnesota Timberwolves",
    "conference": "West",
-   "record": "7-3",
-   "title_prob": 0.041772,
-   "rank": 9,
-   "prob_change_1d": null,
+   "record": "8-3",
+   "title_prob": 0.042915,
+   "rank": 8,
+   "prob_change_1d": 0.0011,
    "history": [
-    0.041772
+    0.041772,
+    0.042915
    ],
    "composite": 0.618,
    "inputs": {
     "net_rating": {
-     "value": 5.03,
-     "z": 1.04,
+     "value": 5.36,
+     "z": 1.09,
      "percentile": 83,
-     "contribution": 0.45
+     "contribution": 0.469
     },
     "star_power": {
-     "value": 5.98,
-     "z": 0.6,
-     "percentile": 79,
-     "contribution": 0.17
+     "value": 3.36,
+     "z": -0.39,
+     "percentile": 38,
+     "contribution": -0.112
     },
     "recent_form": {
-     "value": 10.7,
-     "z": 1.31,
+     "value": 11.09,
+     "z": 1.35,
      "percentile": 100,
-     "contribution": 0.149
+     "contribution": 0.154
     },
     "star_availability": {
-     "value": 0.62,
-     "z": -1.0,
-     "percentile": 14,
-     "contribution": -0.114
+     "value": 0.87,
+     "z": 0.68,
+     "percentile": 72,
+     "contribution": 0.077
     },
     "core_net_rating": null,
     "rotation_availability": {
-     "value": 0.93,
-     "z": -0.65,
-     "percentile": 28,
-     "contribution": -0.037
+     "value": 0.96,
+     "z": 0.54,
+     "percentile": 66,
+     "contribution": 0.031
     },
     "clutch": null
    },
-   "notes": [
-    "Anthony Edwards (star): Out"
-   ],
-   "sim_prob": 0.03675,
+   "notes": [],
+   "sim_prob": 0.0354,
    "sim": {
-    "finals": 0.063,
-    "conf_finals": 0.146,
-    "make_playoffs": 0.743,
-    "seed_avg": 4.74
+    "finals": 0.0617,
+    "conf_finals": 0.1445,
+    "make_playoffs": 0.7332,
+    "seed_avg": 4.78
    }
   },
   {
@@ -528,56 +478,117 @@
    "name": "New York Knicks",
    "conference": "East",
    "record": "5-4",
-   "title_prob": 0.040388,
-   "rank": 10,
-   "prob_change_1d": null,
+   "title_prob": 0.041578,
+   "rank": 9,
+   "prob_change_1d": 0.0012,
    "history": [
-    0.040388
+    0.040388,
+    0.041578
    ],
-   "composite": 0.598,
+   "composite": 0.599,
    "inputs": {
     "net_rating": {
-     "value": 4.32,
-     "z": 0.9,
+     "value": 4.31,
+     "z": 0.87,
      "percentile": 79,
-     "contribution": 0.387
+     "contribution": 0.377
     },
     "star_power": {
      "value": 4.22,
-     "z": -0.13,
-     "percentile": 52,
-     "contribution": -0.036
+     "z": -0.06,
+     "percentile": 59,
+     "contribution": -0.018
     },
     "recent_form": {
      "value": 5.67,
-     "z": 0.71,
+     "z": 0.7,
      "percentile": 72,
-     "contribution": 0.08
+     "contribution": 0.079
     },
     "star_availability": {
      "value": 0.94,
-     "z": 1.2,
+     "z": 1.12,
      "percentile": 100,
-     "contribution": 0.136
+     "contribution": 0.127
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.96,
-     "z": 0.53,
+     "z": 0.59,
      "percentile": 72,
-     "contribution": 0.03
+     "contribution": 0.033
     },
     "clutch": null
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
    ],
-   "sim_prob": 0.05945,
+   "sim_prob": 0.06255,
    "sim": {
-    "finals": 0.1595,
-    "conf_finals": 0.2986,
-    "make_playoffs": 0.8872,
-    "seed_avg": 3.83
+    "finals": 0.1624,
+    "conf_finals": 0.2996,
+    "make_playoffs": 0.8796,
+    "seed_avg": 3.87
+   }
+  },
+  {
+   "id": "DEN",
+   "name": "Denver Nuggets",
+   "conference": "West",
+   "record": "5-3",
+   "title_prob": 0.039057,
+   "rank": 10,
+   "prob_change_1d": -0.0053,
+   "history": [
+    0.044339,
+    0.039057
+   ],
+   "composite": 0.561,
+   "inputs": {
+    "net_rating": {
+     "value": 3.3,
+     "z": 0.67,
+     "percentile": 72,
+     "contribution": 0.289
+    },
+    "star_power": {
+     "value": 6.2,
+     "z": 0.7,
+     "percentile": 79,
+     "contribution": 0.2
+    },
+    "recent_form": {
+     "value": 2.12,
+     "z": 0.27,
+     "percentile": 45,
+     "contribution": 0.031
+    },
+    "star_availability": {
+     "value": 0.83,
+     "z": 0.42,
+     "percentile": 55,
+     "contribution": 0.047
+    },
+    "core_net_rating": null,
+    "rotation_availability": {
+     "value": 0.94,
+     "z": -0.08,
+     "percentile": 41,
+     "contribution": -0.005
+    },
+    "clutch": null
+   },
+   "notes": [
+    "Early season: only 8 games played, so net rating leans on last season",
+    "Nikola Joki\u0107 (star): Day To Day",
+    "Jamal Murray (star): Day To Day"
+   ],
+   "sim_prob": 0.0373,
+   "sim": {
+    "finals": 0.06,
+    "conf_finals": 0.132,
+    "make_playoffs": 0.6506,
+    "seed_avg": 4.99
    }
   },
   {
@@ -585,57 +596,58 @@
    "name": "Portland Trail Blazers",
    "conference": "West",
    "record": "6-3",
-   "title_prob": 0.024191,
+   "title_prob": 0.028948,
    "rank": 11,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.0048,
    "history": [
-    0.024191
+    0.024191,
+    0.028948
    ],
-   "composite": 0.29,
+   "composite": 0.382,
    "inputs": {
     "net_rating": {
-     "value": 1.85,
-     "z": 0.39,
+     "value": 1.86,
+     "z": 0.38,
      "percentile": 62,
-     "contribution": 0.167
+     "contribution": 0.163
     },
     "star_power": {
-     "value": 5.76,
-     "z": 0.51,
-     "percentile": 69,
-     "contribution": 0.144
+     "value": 5.86,
+     "z": 0.57,
+     "percentile": 72,
+     "contribution": 0.162
     },
     "recent_form": {
      "value": 5.56,
-     "z": 0.69,
+     "z": 0.68,
      "percentile": 69,
-     "contribution": 0.079
+     "contribution": 0.078
     },
     "star_availability": {
-     "value": 0.62,
-     "z": -0.99,
-     "percentile": 17,
-     "contribution": -0.113
+     "value": 0.72,
+     "z": -0.32,
+     "percentile": 24,
+     "contribution": -0.037
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.96,
-     "z": 0.24,
-     "percentile": 55,
-     "contribution": 0.013
+     "z": 0.28,
+     "percentile": 59,
+     "contribution": 0.016
     },
     "clutch": null
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season",
-    "Robert Williams (star): Out"
+    "Robert Williams (star): Day To Day"
    ],
-   "sim_prob": 0.0174,
+   "sim_prob": 0.02255,
    "sim": {
-    "finals": 0.0326,
-    "conf_finals": 0.0818,
-    "make_playoffs": 0.5731,
-    "seed_avg": 5.4
+    "finals": 0.041,
+    "conf_finals": 0.0996,
+    "make_playoffs": 0.6141,
+    "seed_avg": 5.17
    }
   },
   {
@@ -643,54 +655,55 @@
    "name": "Cleveland Cavaliers",
    "conference": "East",
    "record": "5-5",
-   "title_prob": 0.024096,
+   "title_prob": 0.024558,
    "rank": 12,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.0005,
    "history": [
-    0.024096
+    0.024096,
+    0.024558
    ],
-   "composite": 0.288,
+   "composite": 0.283,
    "inputs": {
     "net_rating": {
-     "value": 2.59,
-     "z": 0.54,
+     "value": 2.56,
+     "z": 0.52,
      "percentile": 66,
-     "contribution": 0.233
+     "contribution": 0.224
     },
     "star_power": {
-     "value": 4.02,
-     "z": -0.21,
-     "percentile": 45,
-     "contribution": -0.059
+     "value": 3.98,
+     "z": -0.16,
+     "percentile": 52,
+     "contribution": -0.044
     },
     "recent_form": {
      "value": 2.9,
-     "z": 0.38,
-     "percentile": 55,
-     "contribution": 0.043
+     "z": 0.36,
+     "percentile": 48,
+     "contribution": 0.041
     },
     "star_availability": {
      "value": 0.92,
-     "z": 1.06,
-     "percentile": 86,
-     "contribution": 0.121
+     "z": 0.99,
+     "percentile": 90,
+     "contribution": 0.113
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.92,
-     "z": -0.88,
+     "z": -0.9,
      "percentile": 24,
-     "contribution": -0.05
+     "contribution": -0.051
     },
     "clutch": null
    },
    "notes": [],
-   "sim_prob": 0.0314,
+   "sim_prob": 0.03245,
    "sim": {
-    "finals": 0.0944,
-    "conf_finals": 0.1983,
-    "make_playoffs": 0.8041,
-    "seed_avg": 4.51
+    "finals": 0.1019,
+    "conf_finals": 0.2088,
+    "make_playoffs": 0.8082,
+    "seed_avg": 4.46
    }
   },
   {
@@ -698,42 +711,43 @@
    "name": "Memphis Grizzlies",
    "conference": "West",
    "record": "6-3",
-   "title_prob": 0.022061,
+   "title_prob": 0.02257,
    "rank": 13,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.0005,
    "history": [
-    0.022061
+    0.022061,
+    0.02257
    ],
-   "composite": 0.235,
+   "composite": 0.232,
    "inputs": {
     "net_rating": {
-     "value": -0.83,
+     "value": -0.84,
      "z": -0.17,
-     "percentile": 41,
-     "contribution": -0.073
+     "percentile": 34,
+     "contribution": -0.074
     },
     "star_power": {
      "value": 6.7,
-     "z": 0.89,
-     "percentile": 86,
+     "z": 0.9,
+     "percentile": 83,
      "contribution": 0.254
     },
     "recent_form": {
      "value": 6.11,
-     "z": 0.76,
+     "z": 0.75,
      "percentile": 76,
-     "contribution": 0.087
+     "contribution": 0.085
     },
     "star_availability": {
      "value": 0.75,
-     "z": -0.11,
-     "percentile": 34,
-     "contribution": -0.013
+     "z": -0.13,
+     "percentile": 28,
+     "contribution": -0.014
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.94,
-     "z": -0.34,
+     "z": -0.33,
      "percentile": 31,
      "contribution": -0.019
     },
@@ -742,12 +756,68 @@
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
    ],
-   "sim_prob": 0.01525,
+   "sim_prob": 0.01775,
    "sim": {
-    "finals": 0.0284,
-    "conf_finals": 0.073,
-    "make_playoffs": 0.519,
-    "seed_avg": 5.56
+    "finals": 0.0318,
+    "conf_finals": 0.0765,
+    "make_playoffs": 0.5142,
+    "seed_avg": 5.5
+   }
+  },
+  {
+   "id": "DAL",
+   "name": "Dallas Mavericks",
+   "conference": "West",
+   "record": "6-4",
+   "title_prob": 0.021156,
+   "rank": 14,
+   "prob_change_1d": 0.0084,
+   "history": [
+    0.012789,
+    0.021156
+   ],
+   "composite": 0.194,
+   "inputs": {
+    "net_rating": {
+     "value": -0.52,
+     "z": -0.11,
+     "percentile": 45,
+     "contribution": -0.046
+    },
+    "star_power": {
+     "value": 6.88,
+     "z": 0.96,
+     "percentile": 86,
+     "contribution": 0.274
+    },
+    "recent_form": {
+     "value": 4.8,
+     "z": 0.59,
+     "percentile": 59,
+     "contribution": 0.067
+    },
+    "star_availability": {
+     "value": 0.7,
+     "z": -0.42,
+     "percentile": 21,
+     "contribution": -0.047
+    },
+    "core_net_rating": null,
+    "rotation_availability": {
+     "value": 0.92,
+     "z": -0.96,
+     "percentile": 17,
+     "contribution": -0.054
+    },
+    "clutch": null
+   },
+   "notes": [],
+   "sim_prob": 0.01395,
+   "sim": {
+    "finals": 0.0276,
+    "conf_finals": 0.0698,
+    "make_playoffs": 0.4958,
+    "seed_avg": 5.57
    }
   },
   {
@@ -755,111 +825,111 @@
    "name": "Atlanta Hawks",
    "conference": "East",
    "record": "7-4",
-   "title_prob": 0.014834,
-   "rank": 14,
-   "prob_change_1d": null,
+   "title_prob": 0.015744,
+   "rank": 15,
+   "prob_change_1d": 0.0009,
    "history": [
-    0.014834
+    0.014834,
+    0.015744
    ],
-   "composite": -0.003,
+   "composite": 0.016,
    "inputs": {
     "net_rating": {
-     "value": 1.77,
-     "z": 0.37,
-     "percentile": 59,
-     "contribution": 0.16
+     "value": 1.75,
+     "z": 0.35,
+     "percentile": 55,
+     "contribution": 0.153
     },
     "star_power": {
      "value": 2.26,
-     "z": -0.93,
-     "percentile": 21,
-     "contribution": -0.264
+     "z": -0.82,
+     "percentile": 24,
+     "contribution": -0.233
     },
     "recent_form": {
      "value": 3.18,
-     "z": 0.41,
-     "percentile": 59,
-     "contribution": 0.046
+     "z": 0.4,
+     "percentile": 55,
+     "contribution": 0.045
     },
     "star_availability": {
      "value": 0.84,
-     "z": 0.51,
-     "percentile": 66,
-     "contribution": 0.058
+     "z": 0.47,
+     "percentile": 59,
+     "contribution": 0.053
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.95,
-     "z": -0.06,
+     "z": -0.04,
      "percentile": 45,
-     "contribution": -0.003
+     "contribution": -0.002
     },
     "clutch": null
    },
    "notes": [],
-   "sim_prob": 0.01935,
+   "sim_prob": 0.02105,
    "sim": {
-    "finals": 0.0635,
-    "conf_finals": 0.1462,
-    "make_playoffs": 0.768,
-    "seed_avg": 4.68
+    "finals": 0.0676,
+    "conf_finals": 0.1532,
+    "make_playoffs": 0.7742,
+    "seed_avg": 4.65
    }
   },
   {
    "id": "MIA",
    "name": "Miami Heat",
    "conference": "East",
-   "record": "3-6",
-   "title_prob": 0.014492,
-   "rank": 15,
-   "prob_change_1d": null,
+   "record": "4-6",
+   "title_prob": 0.015727,
+   "rank": 16,
+   "prob_change_1d": 0.0012,
    "history": [
-    0.014492
+    0.014492,
+    0.015727
    ],
-   "composite": -0.017,
+   "composite": 0.016,
    "inputs": {
     "net_rating": {
-     "value": -0.83,
-     "z": -0.17,
-     "percentile": 45,
-     "contribution": -0.072
+     "value": -0.61,
+     "z": -0.13,
+     "percentile": 38,
+     "contribution": -0.054
     },
     "star_power": {
-     "value": 4.32,
-     "z": -0.08,
+     "value": 4.14,
+     "z": -0.09,
      "percentile": 55,
-     "contribution": -0.024
+     "contribution": -0.027
     },
     "recent_form": {
-     "value": -6.56,
-     "z": -0.76,
-     "percentile": 21,
-     "contribution": -0.087
+     "value": -5.3,
+     "z": -0.63,
+     "percentile": 28,
+     "contribution": -0.071
     },
     "star_availability": {
      "value": 0.88,
-     "z": 0.76,
-     "percentile": 76,
-     "contribution": 0.087
+     "z": 0.71,
+     "percentile": 79,
+     "contribution": 0.081
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.99,
-     "z": 1.38,
-     "percentile": 90,
-     "contribution": 0.078
+     "z": 1.53,
+     "percentile": 97,
+     "contribution": 0.087
     },
     "clutch": null
    },
-   "notes": [
-    "Early season: only 9 games played, so net rating leans on last season"
-   ],
-   "sim_prob": 0.0163,
+   "notes": [],
+   "sim_prob": 0.0182,
    "sim": {
-    "finals": 0.0556,
-    "conf_finals": 0.1258,
-    "make_playoffs": 0.6535,
-    "seed_avg": 5.16
+    "finals": 0.0617,
+    "conf_finals": 0.1384,
+    "make_playoffs": 0.6898,
+    "seed_avg": 5.1
    }
   },
   {
@@ -867,44 +937,45 @@
    "name": "Toronto Raptors",
    "conference": "East",
    "record": "5-4",
-   "title_prob": 0.013378,
-   "rank": 16,
-   "prob_change_1d": null,
+   "title_prob": 0.014985,
+   "rank": 17,
+   "prob_change_1d": 0.0016,
    "history": [
-    0.013378
+    0.013378,
+    0.014985
    ],
-   "composite": -0.065,
+   "composite": -0.013,
    "inputs": {
     "net_rating": {
-     "value": 2.73,
-     "z": 0.57,
+     "value": 2.76,
+     "z": 0.56,
      "percentile": 69,
-     "contribution": 0.245
+     "contribution": 0.242
     },
     "star_power": {
-     "value": 1.2,
-     "z": -1.36,
-     "percentile": 3,
-     "contribution": -0.388
+     "value": 1.36,
+     "z": -1.17,
+     "percentile": 10,
+     "contribution": -0.332
     },
     "recent_form": {
      "value": 5.44,
-     "z": 0.68,
+     "z": 0.67,
      "percentile": 66,
-     "contribution": 0.077
+     "contribution": 0.076
     },
     "star_availability": {
      "value": 0.75,
-     "z": -0.06,
-     "percentile": 38,
-     "contribution": -0.007
+     "z": -0.08,
+     "percentile": 31,
+     "contribution": -0.009
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.95,
-     "z": 0.13,
+     "z": 0.16,
      "percentile": 52,
-     "contribution": 0.007
+     "contribution": 0.009
     },
     "clutch": null
    },
@@ -913,181 +984,126 @@
     "Immanuel Quickley (star): Day To Day",
     "Scottie Barnes (star): Day To Day"
    ],
-   "sim_prob": 0.0172,
+   "sim_prob": 0.01815,
    "sim": {
-    "finals": 0.0571,
-    "conf_finals": 0.1311,
-    "make_playoffs": 0.691,
-    "seed_avg": 4.99
+    "finals": 0.0627,
+    "conf_finals": 0.1415,
+    "make_playoffs": 0.7014,
+    "seed_avg": 4.89
    }
   },
   {
    "id": "PHI",
    "name": "Philadelphia 76ers",
    "conference": "East",
-   "record": "8-2",
-   "title_prob": 0.013102,
-   "rank": 17,
-   "prob_change_1d": null,
-   "history": [
-    0.013102
-   ],
-   "composite": -0.077,
-   "inputs": {
-    "net_rating": {
-     "value": 0.36,
-     "z": 0.08,
-     "percentile": 52,
-     "contribution": 0.034
-    },
-    "star_power": {
-     "value": 3.44,
-     "z": -0.45,
-     "percentile": 34,
-     "contribution": -0.126
-    },
-    "recent_form": {
-     "value": 2.8,
-     "z": 0.36,
-     "percentile": 52,
-     "contribution": 0.041
-    },
-    "star_availability": {
-     "value": 0.84,
-     "z": 0.49,
-     "percentile": 62,
-     "contribution": 0.056
-    },
-    "core_net_rating": null,
-    "rotation_availability": {
-     "value": 0.9,
-     "z": -1.45,
-     "percentile": 7,
-     "contribution": -0.082
-    },
-    "clutch": null
-   },
-   "notes": [],
-   "sim_prob": 0.01565,
-   "sim": {
-    "finals": 0.0579,
-    "conf_finals": 0.1449,
-    "make_playoffs": 0.7917,
-    "seed_avg": 4.43
-   }
-  },
-  {
-   "id": "DAL",
-   "name": "Dallas Mavericks",
-   "conference": "West",
-   "record": "5-4",
-   "title_prob": 0.012789,
+   "record": "9-2",
+   "title_prob": 0.013154,
    "rank": 18,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.0001,
    "history": [
-    0.012789
+    0.013102,
+    0.013154
    ],
    "composite": -0.092,
    "inputs": {
     "net_rating": {
-     "value": -1.75,
-     "z": -0.36,
-     "percentile": 31,
-     "contribution": -0.154
+     "value": 0.31,
+     "z": 0.06,
+     "percentile": 52,
+     "contribution": 0.027
     },
     "star_power": {
-     "value": 5.94,
-     "z": 0.58,
-     "percentile": 72,
-     "contribution": 0.165
+     "value": 3.12,
+     "z": -0.49,
+     "percentile": 31,
+     "contribution": -0.138
     },
     "recent_form": {
-     "value": 1.22,
-     "z": 0.17,
-     "percentile": 41,
-     "contribution": 0.02
+     "value": 3.09,
+     "z": 0.39,
+     "percentile": 52,
+     "contribution": 0.044
     },
     "star_availability": {
-     "value": 0.69,
-     "z": -0.48,
-     "percentile": 28,
-     "contribution": -0.055
+     "value": 0.84,
+     "z": 0.48,
+     "percentile": 62,
+     "contribution": 0.055
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.91,
-     "z": -1.19,
-     "percentile": 10,
-     "contribution": -0.068
+     "z": -1.38,
+     "percentile": 7,
+     "contribution": -0.078
     },
     "clutch": null
    },
-   "notes": [
-    "Early season: only 9 games played, so net rating leans on last season"
-   ],
-   "sim_prob": 0.00705,
+   "notes": [],
+   "sim_prob": 0.01575,
    "sim": {
-    "finals": 0.0145,
-    "conf_finals": 0.0414,
-    "make_playoffs": 0.3694,
-    "seed_avg": 5.92
+    "finals": 0.0585,
+    "conf_finals": 0.1424,
+    "make_playoffs": 0.8062,
+    "seed_avg": 4.43
    }
   },
   {
-   "id": "NOP",
-   "name": "New Orleans Pelicans",
+   "id": "LAC",
+   "name": "Los Angeles Clippers",
    "conference": "West",
-   "record": "4-5",
-   "title_prob": 0.011624,
+   "record": "2-7",
+   "title_prob": 0.01125,
    "rank": 19,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.0026,
    "history": [
-    0.011624
+    0.008696,
+    0.01125
    ],
-   "composite": -0.149,
+   "composite": -0.185,
    "inputs": {
     "net_rating": {
-     "value": -1.56,
-     "z": -0.32,
-     "percentile": 34,
-     "contribution": -0.137
+     "value": -0.42,
+     "z": -0.08,
+     "percentile": 48,
+     "contribution": -0.037
     },
     "star_power": {
-     "value": 4.18,
-     "z": -0.14,
-     "percentile": 48,
-     "contribution": -0.04
+     "value": 2.54,
+     "z": -0.71,
+     "percentile": 28,
+     "contribution": -0.202
     },
     "recent_form": {
-     "value": 1.44,
-     "z": 0.2,
-     "percentile": 45,
-     "contribution": 0.023
+     "value": -4.0,
+     "z": -0.47,
+     "percentile": 34,
+     "contribution": -0.053
     },
     "star_availability": {
-     "value": 0.79,
-     "z": 0.16,
-     "percentile": 41,
-     "contribution": 0.018
+     "value": 0.9,
+     "z": 0.85,
+     "percentile": 86,
+     "contribution": 0.096
     },
     "core_net_rating": null,
     "rotation_availability": {
-     "value": 0.94,
-     "z": -0.22,
-     "percentile": 34,
-     "contribution": -0.012
+     "value": 0.95,
+     "z": 0.18,
+     "percentile": 55,
+     "contribution": 0.01
     },
     "clutch": null
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
    ],
-   "sim_prob": 0.00705,
+   "sim_prob": 0.0044,
    "sim": {
-    "finals": 0.0118,
-    "conf_finals": 0.0315,
-    "make_playoffs": 0.2705,
-    "seed_avg": 6.27
+    "finals": 0.0089,
+    "conf_finals": 0.0248,
+    "make_playoffs": 0.2048,
+    "seed_avg": 6.47
    }
   },
   {
@@ -1095,114 +1111,114 @@
    "name": "Phoenix Suns",
    "conference": "West",
    "record": "3-5",
-   "title_prob": 0.008923,
+   "title_prob": 0.010945,
    "rank": 20,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.002,
    "history": [
-    0.008923
+    0.008923,
+    0.010945
    ],
-   "composite": -0.308,
+   "composite": -0.202,
    "inputs": {
     "net_rating": {
-     "value": -0.54,
+     "value": -0.53,
      "z": -0.11,
-     "percentile": 48,
-     "contribution": -0.047
+     "percentile": 41,
+     "contribution": -0.046
     },
     "star_power": {
-     "value": 3.28,
-     "z": -0.51,
-     "percentile": 31,
-     "contribution": -0.145
+     "value": 3.34,
+     "z": -0.4,
+     "percentile": 34,
+     "contribution": -0.114
     },
     "recent_form": {
      "value": -6.25,
-     "z": -0.72,
-     "percentile": 28,
-     "contribution": -0.082
+     "z": -0.74,
+     "percentile": 24,
+     "contribution": -0.084
     },
     "star_availability": {
-     "value": 0.66,
-     "z": -0.7,
-     "percentile": 21,
-     "contribution": -0.08
+     "value": 0.76,
+     "z": -0.06,
+     "percentile": 34,
+     "contribution": -0.007
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.97,
-     "z": 0.81,
-     "percentile": 83,
-     "contribution": 0.046
+     "z": 0.89,
+     "percentile": 86,
+     "contribution": 0.05
     },
     "clutch": null
    },
    "notes": [
     "Early season: only 8 games played, so net rating leans on last season",
-    "Jordan Goodwin (star): Out"
+    "Jordan Goodwin (star): Day To Day"
    ],
-   "sim_prob": 0.00305,
+   "sim_prob": 0.0068,
    "sim": {
-    "finals": 0.0058,
-    "conf_finals": 0.0212,
-    "make_playoffs": 0.2284,
-    "seed_avg": 6.32
+    "finals": 0.0124,
+    "conf_finals": 0.0301,
+    "make_playoffs": 0.2638,
+    "seed_avg": 6.16
    }
   },
   {
-   "id": "LAC",
-   "name": "Los Angeles Clippers",
+   "id": "NOP",
+   "name": "New Orleans Pelicans",
    "conference": "West",
-   "record": "1-7",
-   "title_prob": 0.008696,
+   "record": "4-6",
+   "title_prob": 0.010242,
    "rank": 21,
-   "prob_change_1d": null,
+   "prob_change_1d": -0.0014,
    "history": [
-    0.008696
+    0.011624,
+    0.010242
    ],
-   "composite": -0.323,
+   "composite": -0.242,
    "inputs": {
     "net_rating": {
-     "value": -1.07,
-     "z": -0.22,
-     "percentile": 38,
-     "contribution": -0.094
+     "value": -2.02,
+     "z": -0.41,
+     "percentile": 31,
+     "contribution": -0.177
     },
     "star_power": {
-     "value": 2.26,
-     "z": -0.93,
-     "percentile": 24,
-     "contribution": -0.264
+     "value": 3.68,
+     "z": -0.27,
+     "percentile": 45,
+     "contribution": -0.077
     },
     "recent_form": {
-     "value": -6.5,
-     "z": -0.76,
-     "percentile": 24,
-     "contribution": -0.086
+     "value": -0.3,
+     "z": -0.02,
+     "percentile": 41,
+     "contribution": -0.003
     },
     "star_availability": {
-     "value": 0.89,
-     "z": 0.89,
-     "percentile": 83,
-     "contribution": 0.101
+     "value": 0.79,
+     "z": 0.15,
+     "percentile": 38,
+     "contribution": 0.017
     },
     "core_net_rating": null,
     "rotation_availability": {
-     "value": 0.96,
-     "z": 0.34,
-     "percentile": 59,
-     "contribution": 0.019
+     "value": 0.95,
+     "z": -0.03,
+     "percentile": 48,
+     "contribution": -0.002
     },
     "clutch": null
    },
-   "notes": [
-    "Early season: only 8 games played, so net rating leans on last season"
-   ],
-   "sim_prob": 0.00315,
+   "notes": [],
+   "sim_prob": 0.004,
    "sim": {
-    "finals": 0.0069,
-    "conf_finals": 0.0178,
-    "make_playoffs": 0.1722,
-    "seed_avg": 6.54
+    "finals": 0.0076,
+    "conf_finals": 0.0215,
+    "make_playoffs": 0.1944,
+    "seed_avg": 6.41
    }
   },
   {
@@ -1210,113 +1226,57 @@
    "name": "Orlando Magic",
    "conference": "East",
    "record": "2-7",
-   "title_prob": 0.004984,
+   "title_prob": 0.005379,
    "rank": 22,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.0004,
    "history": [
-    0.004984
+    0.004984,
+    0.005379
    ],
-   "composite": -0.657,
+   "composite": -0.628,
    "inputs": {
     "net_rating": {
-     "value": -2.45,
-     "z": -0.5,
+     "value": -2.44,
+     "z": -0.49,
      "percentile": 28,
-     "contribution": -0.217
+     "contribution": -0.214
     },
     "star_power": {
      "value": 1.68,
-     "z": -1.17,
+     "z": -1.04,
      "percentile": 14,
-     "contribution": -0.332
+     "contribution": -0.297
     },
     "recent_form": {
      "value": -9.22,
-     "z": -1.08,
+     "z": -1.1,
      "percentile": 17,
-     "contribution": -0.123
+     "contribution": -0.125
     },
     "star_availability": {
      "value": 0.85,
-     "z": 0.62,
+     "z": 0.57,
      "percentile": 69,
-     "contribution": 0.07
+     "contribution": 0.065
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.92,
-     "z": -0.98,
-     "percentile": 17,
-     "contribution": -0.056
+     "z": -1.01,
+     "percentile": 14,
+     "contribution": -0.058
     },
     "clutch": null
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
    ],
-   "sim_prob": 0.00335,
+   "sim_prob": 0.0035,
    "sim": {
-    "finals": 0.0148,
-    "conf_finals": 0.0391,
-    "make_playoffs": 0.3401,
-    "seed_avg": 6.08
-   }
-  },
-  {
-   "id": "IND",
-   "name": "Indiana Pacers",
-   "conference": "East",
-   "record": "3-7",
-   "title_prob": 0.004052,
-   "rank": 23,
-   "prob_change_1d": null,
-   "history": [
-    0.004052
-   ],
-   "composite": -0.782,
-   "inputs": {
-    "net_rating": {
-     "value": -5.04,
-     "z": -1.04,
-     "percentile": 21,
-     "contribution": -0.448
-    },
-    "star_power": {
-     "value": 5.52,
-     "z": 0.41,
-     "percentile": 66,
-     "contribution": 0.116
-    },
-    "recent_form": {
-     "value": -3.9,
-     "z": -0.44,
-     "percentile": 38,
-     "contribution": -0.05
-    },
-    "star_availability": {
-     "value": 0.43,
-     "z": -2.29,
-     "percentile": 3,
-     "contribution": -0.26
-    },
-    "core_net_rating": null,
-    "rotation_availability": {
-     "value": 0.87,
-     "z": -2.46,
-     "percentile": 0,
-     "contribution": -0.14
-    },
-    "clutch": null
-   },
-   "notes": [
-    "Tyrese Haliburton (star): Out"
-   ],
-   "sim_prob": 0.0023,
-   "sim": {
-    "finals": 0.0106,
-    "conf_finals": 0.0293,
-    "make_playoffs": 0.2756,
-    "seed_avg": 6.27
+    "finals": 0.0179,
+    "conf_finals": 0.0425,
+    "make_playoffs": 0.3385,
+    "seed_avg": 6.05
    }
   },
   {
@@ -1324,342 +1284,401 @@
    "name": "Charlotte Hornets",
    "conference": "East",
    "record": "3-7",
-   "title_prob": 0.003962,
-   "rank": 24,
-   "prob_change_1d": null,
+   "title_prob": 0.004335,
+   "rank": 23,
+   "prob_change_1d": 0.0004,
    "history": [
-    0.003962
+    0.003962,
+    0.004335
    ],
-   "composite": -0.795,
+   "composite": -0.758,
    "inputs": {
     "net_rating": {
-     "value": -3.14,
+     "value": -3.17,
      "z": -0.64,
      "percentile": 24,
      "contribution": -0.278
     },
     "star_power": {
      "value": 0.98,
-     "z": -1.45,
-     "percentile": 0,
-     "contribution": -0.413
+     "z": -1.31,
+     "percentile": 7,
+     "contribution": -0.373
     },
     "recent_form": {
      "value": -13.9,
-     "z": -1.64,
-     "percentile": 7,
-     "contribution": -0.187
+     "z": -1.66,
+     "percentile": 3,
+     "contribution": -0.189
     },
     "star_availability": {
      "value": 0.82,
-     "z": 0.39,
-     "percentile": 59,
-     "contribution": 0.045
+     "z": 0.36,
+     "percentile": 52,
+     "contribution": 0.041
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.97,
-     "z": 0.67,
-     "percentile": 76,
-     "contribution": 0.038
+     "z": 0.74,
+     "percentile": 79,
+     "contribution": 0.042
     },
     "clutch": null
    },
    "notes": [
     "Moussa Diabat\u00e9 (star): Day To Day"
    ],
-   "sim_prob": 0.00145,
+   "sim_prob": 0.0027,
    "sim": {
-    "finals": 0.008,
-    "conf_finals": 0.025,
-    "make_playoffs": 0.247,
-    "seed_avg": 6.36
+    "finals": 0.0113,
+    "conf_finals": 0.0311,
+    "make_playoffs": 0.2621,
+    "seed_avg": 6.32
+   }
+  },
+  {
+   "id": "IND",
+   "name": "Indiana Pacers",
+   "conference": "East",
+   "record": "3-7",
+   "title_prob": 0.004235,
+   "rank": 24,
+   "prob_change_1d": 0.0002,
+   "history": [
+    0.004052,
+    0.004235
+   ],
+   "composite": -0.771,
+   "inputs": {
+    "net_rating": {
+     "value": -5.08,
+     "z": -1.03,
+     "percentile": 21,
+     "contribution": -0.445
+    },
+    "star_power": {
+     "value": 5.48,
+     "z": 0.42,
+     "percentile": 69,
+     "contribution": 0.12
+    },
+    "recent_form": {
+     "value": -3.9,
+     "z": -0.46,
+     "percentile": 38,
+     "contribution": -0.052
+    },
+    "star_availability": {
+     "value": 0.43,
+     "z": -2.18,
+     "percentile": 3,
+     "contribution": -0.248
+    },
+    "core_net_rating": null,
+    "rotation_availability": {
+     "value": 0.87,
+     "z": -2.57,
+     "percentile": 0,
+     "contribution": -0.146
+    },
+    "clutch": null
+   },
+   "notes": [
+    "Tyrese Haliburton (star): Out"
+   ],
+   "sim_prob": 0.0019,
+   "sim": {
+    "finals": 0.0107,
+    "conf_finals": 0.0312,
+    "make_playoffs": 0.2792,
+    "seed_avg": 6.22
    }
   },
   {
    "id": "BKN",
    "name": "Brooklyn Nets",
    "conference": "East",
-   "record": "2-7",
-   "title_prob": 0.00337,
+   "record": "2-8",
+   "title_prob": 0.002638,
    "rank": 25,
-   "prob_change_1d": null,
+   "prob_change_1d": -0.0007,
    "history": [
-    0.00337
+    0.00337,
+    0.002638
    ],
-   "composite": -0.892,
+   "composite": -1.056,
    "inputs": {
     "net_rating": {
-     "value": -7.06,
-     "z": -1.45,
-     "percentile": 10,
-     "contribution": -0.628
+     "value": -8.04,
+     "z": -1.63,
+     "percentile": 3,
+     "contribution": -0.705
     },
     "star_power": {
-     "value": 2.38,
-     "z": -0.88,
-     "percentile": 28,
-     "contribution": -0.25
+     "value": 1.78,
+     "z": -1.01,
+     "percentile": 17,
+     "contribution": -0.286
     },
     "recent_form": {
-     "value": -5.89,
-     "z": -0.68,
-     "percentile": 31,
-     "contribution": -0.077
+     "value": -9.0,
+     "z": -1.07,
+     "percentile": 21,
+     "contribution": -0.122
     },
     "star_availability": {
      "value": 0.79,
-     "z": 0.2,
-     "percentile": 48,
-     "contribution": 0.022
+     "z": 0.17,
+     "percentile": 45,
+     "contribution": 0.019
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.97,
-     "z": 0.72,
-     "percentile": 79,
-     "contribution": 0.041
+     "z": 0.66,
+     "percentile": 76,
+     "contribution": 0.037
     },
     "clutch": null
    },
-   "notes": [
-    "Early season: only 9 games played, so net rating leans on last season"
-   ],
-   "sim_prob": 0.00165,
+   "notes": [],
+   "sim_prob": 0.00105,
    "sim": {
-    "finals": 0.0089,
-    "conf_finals": 0.0226,
-    "make_playoffs": 0.2129,
-    "seed_avg": 6.38
-   }
-  },
-  {
-   "id": "UTA",
-   "name": "Utah Jazz",
-   "conference": "West",
-   "record": "1-8",
-   "title_prob": 0.00304,
-   "rank": 26,
-   "prob_change_1d": null,
-   "history": [
-    0.00304
-   ],
-   "composite": -0.954,
-   "inputs": {
-    "net_rating": {
-     "value": -6.67,
-     "z": -1.37,
-     "percentile": 17,
-     "contribution": -0.594
-    },
-    "star_power": {
-     "value": 3.96,
-     "z": -0.23,
-     "percentile": 41,
-     "contribution": -0.066
-    },
-    "recent_form": {
-     "value": -11.33,
-     "z": -1.34,
-     "percentile": 14,
-     "contribution": -0.152
-    },
-    "star_availability": {
-     "value": 0.54,
-     "z": -1.52,
-     "percentile": 7,
-     "contribution": -0.172
-    },
-    "core_net_rating": null,
-    "rotation_availability": {
-     "value": 0.96,
-     "z": 0.52,
-     "percentile": 69,
-     "contribution": 0.029
-    },
-    "clutch": null
-   },
-   "notes": [
-    "Early season: only 9 games played, so net rating leans on last season"
-   ],
-   "sim_prob": 0.0003,
-   "sim": {
-    "finals": 0.0011,
-    "conf_finals": 0.0037,
-    "make_playoffs": 0.0387,
-    "seed_avg": 6.97
+    "finals": 0.005,
+    "conf_finals": 0.0147,
+    "make_playoffs": 0.1569,
+    "seed_avg": 6.57
    }
   },
   {
    "id": "MIL",
    "name": "Milwaukee Bucks",
    "conference": "East",
-   "record": "1-8",
-   "title_prob": 0.002952,
-   "rank": 27,
-   "prob_change_1d": null,
+   "record": "1-9",
+   "title_prob": 0.002535,
+   "rank": 26,
+   "prob_change_1d": -0.0004,
    "history": [
-    0.002952
+    0.002952,
+    0.002535
    ],
-   "composite": -0.972,
+   "composite": -1.079,
    "inputs": {
     "net_rating": {
-     "value": -6.99,
-     "z": -1.44,
+     "value": -7.46,
+     "z": -1.51,
      "percentile": 14,
-     "contribution": -0.622
+     "contribution": -0.654
     },
     "star_power": {
-     "value": 1.42,
-     "z": -1.27,
-     "percentile": 7,
-     "contribution": -0.362
+     "value": 0.5,
+     "z": -1.5,
+     "percentile": 0,
+     "contribution": -0.426
     },
     "recent_form": {
-     "value": -12.44,
-     "z": -1.47,
+     "value": -13.2,
+     "z": -1.58,
      "percentile": 10,
-     "contribution": -0.167
+     "contribution": -0.18
     },
     "star_availability": {
      "value": 0.87,
-     "z": 0.74,
-     "percentile": 72,
-     "contribution": 0.084
+     "z": 0.68,
+     "percentile": 76,
+     "contribution": 0.077
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 1.0,
-     "z": 1.68,
-     "percentile": 98,
-     "contribution": 0.096
+     "z": 1.81,
+     "percentile": 100,
+     "contribution": 0.103
+    },
+    "clutch": null
+   },
+   "notes": [],
+   "sim_prob": 0.0009,
+   "sim": {
+    "finals": 0.0042,
+    "conf_finals": 0.011,
+    "make_playoffs": 0.1302,
+    "seed_avg": 6.67
+   }
+  },
+  {
+   "id": "UTA",
+   "name": "Utah Jazz",
+   "conference": "West",
+   "record": "1-9",
+   "title_prob": 0.002499,
+   "rank": 27,
+   "prob_change_1d": -0.0005,
+   "history": [
+    0.00304,
+    0.002499
+   ],
+   "composite": -1.088,
+   "inputs": {
+    "net_rating": {
+     "value": -6.83,
+     "z": -1.39,
+     "percentile": 17,
+     "contribution": -0.598
+    },
+    "star_power": {
+     "value": 3.94,
+     "z": -0.17,
+     "percentile": 48,
+     "contribution": -0.049
+    },
+    "recent_form": {
+     "value": -11.7,
+     "z": -1.4,
+     "percentile": 14,
+     "contribution": -0.159
+    },
+    "star_availability": {
+     "value": 0.4,
+     "z": -2.39,
+     "percentile": 0,
+     "contribution": -0.272
+    },
+    "core_net_rating": null,
+    "rotation_availability": {
+     "value": 0.94,
+     "z": -0.19,
+     "percentile": 38,
+     "contribution": -0.011
     },
     "clutch": null
    },
    "notes": [
-    "Early season: only 9 games played, so net rating leans on last season"
+    "Lauri Markkanen (star): Out"
    ],
-   "sim_prob": 0.00115,
+   "sim_prob": 0.00015,
    "sim": {
-    "finals": 0.005,
-    "conf_finals": 0.0157,
-    "make_playoffs": 0.1584,
-    "seed_avg": 6.57
+    "finals": 0.0004,
+    "conf_finals": 0.0011,
+    "make_playoffs": 0.0234,
+    "seed_avg": 7.07
    }
   },
   {
    "id": "CHI",
    "name": "Chicago Bulls",
    "conference": "East",
-   "record": "1-7",
-   "title_prob": 0.002227,
-   "rank": 28,
-   "prob_change_1d": null,
-   "history": [
-    0.002227
-   ],
-   "composite": -1.141,
-   "inputs": {
-    "net_rating": {
-     "value": -7.63,
-     "z": -1.57,
-     "percentile": 3,
-     "contribution": -0.679
-    },
-    "star_power": {
-     "value": 1.54,
-     "z": -1.22,
-     "percentile": 10,
-     "contribution": -0.348
-    },
-    "recent_form": {
-     "value": -18.0,
-     "z": -2.14,
-     "percentile": 0,
-     "contribution": -0.243
-    },
-    "star_availability": {
-     "value": 0.81,
-     "z": 0.3,
-     "percentile": 52,
-     "contribution": 0.034
-    },
-    "core_net_rating": null,
-    "rotation_availability": {
-     "value": 1.0,
-     "z": 1.68,
-     "percentile": 98,
-     "contribution": 0.096
-    },
-    "clutch": null
-   },
-   "notes": [
-    "Early season: only 8 games played, so net rating leans on last season",
-    "Jalen Smith (star): Day To Day"
-   ],
-   "sim_prob": 0.00115,
-   "sim": {
-    "finals": 0.004,
-    "conf_finals": 0.0123,
-    "make_playoffs": 0.1442,
-    "seed_avg": 6.48
-   }
-  },
-  {
-   "id": "SAC",
-   "name": "Sacramento Kings",
-   "conference": "West",
    "record": "1-8",
-   "title_prob": 0.002045,
-   "rank": 29,
-   "prob_change_1d": null,
+   "title_prob": 0.00215,
+   "rank": 28,
+   "prob_change_1d": -0.0001,
    "history": [
-    0.002045
+    0.002227,
+    0.00215
    ],
-   "composite": -1.192,
+   "composite": -1.178,
    "inputs": {
     "net_rating": {
-     "value": -8.5,
-     "z": -1.75,
-     "percentile": 0,
-     "contribution": -0.757
+     "value": -7.65,
+     "z": -1.55,
+     "percentile": 7,
+     "contribution": -0.67
     },
     "star_power": {
-     "value": 3.74,
-     "z": -0.32,
-     "percentile": 38,
-     "contribution": -0.091
+     "value": 0.86,
+     "z": -1.36,
+     "percentile": 3,
+     "contribution": -0.387
     },
     "recent_form": {
-     "value": -14.11,
-     "z": -1.67,
-     "percentile": 3,
-     "contribution": -0.19
+     "value": -16.67,
+     "z": -2.0,
+     "percentile": 0,
+     "contribution": -0.227
     },
     "star_availability": {
-     "value": 0.58,
-     "z": -1.27,
-     "percentile": 10,
-     "contribution": -0.144
+     "value": 0.85,
+     "z": 0.54,
+     "percentile": 66,
+     "contribution": 0.061
     },
     "core_net_rating": null,
     "rotation_availability": {
-     "value": 0.94,
-     "z": -0.17,
-     "percentile": 38,
-     "contribution": -0.01
+     "value": 0.97,
+     "z": 0.78,
+     "percentile": 83,
+     "contribution": 0.044
     },
     "clutch": null
    },
    "notes": [
     "Early season: only 9 games played, so net rating leans on last season"
    ],
-   "sim_prob": 0.0003,
+   "sim_prob": 0.0007,
    "sim": {
-    "finals": 0.0004,
+    "finals": 0.0039,
+    "conf_finals": 0.0106,
+    "make_playoffs": 0.1246,
+    "seed_avg": 6.63
+   }
+  },
+  {
+   "id": "SAC",
+   "name": "Sacramento Kings",
+   "conference": "West",
+   "record": "1-9",
+   "title_prob": 0.002042,
+   "rank": 29,
+   "prob_change_1d": -0.0,
+   "history": [
+    0.002045,
+    0.002042
+   ],
+   "composite": -1.209,
+   "inputs": {
+    "net_rating": {
+     "value": -8.36,
+     "z": -1.7,
+     "percentile": 0,
+     "contribution": -0.733
+    },
+    "star_power": {
+     "value": 4.26,
+     "z": -0.05,
+     "percentile": 62,
+     "contribution": -0.013
+    },
+    "recent_form": {
+     "value": -13.3,
+     "z": -1.59,
+     "percentile": 7,
+     "contribution": -0.181
+    },
+    "star_availability": {
+     "value": 0.43,
+     "z": -2.18,
+     "percentile": 7,
+     "contribution": -0.248
+    },
+    "core_net_rating": null,
+    "rotation_availability": {
+     "value": 0.93,
+     "z": -0.59,
+     "percentile": 28,
+     "contribution": -0.034
+    },
+    "clutch": null
+   },
+   "notes": [
+    "Domantas Sabonis (star): Out"
+   ],
+   "sim_prob": 0.00025,
+   "sim": {
+    "finals": 0.0003,
     "conf_finals": 0.0013,
-    "make_playoffs": 0.0243,
-    "seed_avg": 6.99
+    "make_playoffs": 0.0176,
+    "seed_avg": 7.11
    }
   },
   {
@@ -1667,63 +1686,64 @@
    "name": "Washington Wizards",
    "conference": "East",
    "record": "4-6",
-   "title_prob": 0.001544,
+   "title_prob": 0.001934,
    "rank": 30,
-   "prob_change_1d": null,
+   "prob_change_1d": 0.0004,
    "history": [
-    0.001544
+    0.001544,
+    0.001934
    ],
-   "composite": -1.361,
+   "composite": -1.242,
    "inputs": {
     "net_rating": {
-     "value": -7.48,
-     "z": -1.54,
-     "percentile": 7,
-     "contribution": -0.665
+     "value": -7.47,
+     "z": -1.52,
+     "percentile": 10,
+     "contribution": -0.655
     },
     "star_power": {
      "value": 2.2,
-     "z": -0.95,
-     "percentile": 17,
-     "contribution": -0.271
+     "z": -0.84,
+     "percentile": 21,
+     "contribution": -0.239
     },
     "recent_form": {
      "value": -4.7,
-     "z": -0.54,
-     "percentile": 34,
-     "contribution": -0.061
+     "z": -0.55,
+     "percentile": 31,
+     "contribution": -0.063
     },
     "star_availability": {
-     "value": 0.36,
-     "z": -2.75,
-     "percentile": 0,
-     "contribution": -0.313
+     "value": 0.45,
+     "z": -2.05,
+     "percentile": 10,
+     "contribution": -0.233
     },
     "core_net_rating": null,
     "rotation_availability": {
      "value": 0.92,
-     "z": -0.89,
+     "z": -0.91,
      "percentile": 21,
-     "contribution": -0.05
+     "contribution": -0.052
     },
     "clutch": null
    },
    "notes": [
     "Justin Champagnie (star): Out",
-    "Anthony Davis (star): Out"
+    "Anthony Davis (star): Day To Day"
    ],
-   "sim_prob": 0.00025,
+   "sim_prob": 0.0006,
    "sim": {
-    "finals": 0.0025,
-    "conf_finals": 0.0089,
-    "make_playoffs": 0.1294,
-    "seed_avg": 6.56
+    "finals": 0.0034,
+    "conf_finals": 0.0107,
+    "make_playoffs": 0.1533,
+    "seed_avg": 6.54
    }
   }
  ],
  "sim": {
   "runs": 20000,
-  "seed_date": "2026-11-08",
+  "seed_date": "2026-11-09",
   "mode": "regular_season",
   "margin_per_z": 3.3
  }
