@@ -1090,37 +1090,18 @@ function buildModel() {
   $("model-fine").textContent = parts.join(" · ");
 }
 
-// The market blend and the injury input, explained under the weights. Both blocks are optional in odds.json.
+// The prediction-market share, shown as one more row under the weights. The block is optional in odds.json.
 function renderModelExtra() {
   const box = $("model-extra");
   box.textContent = "";
   const mk = state.data.market;
+  if (!mk || typeof mk !== "object") return;
+  const used = mk.used === true && typeof mk.weight === "number";
   const rows = el("div", "rows");
   rows.setAttribute("role", "group");
-  rows.setAttribute("aria-label", "Market blend");
-  if (mk && typeof mk === "object") {
-    const used = mk.used === true && typeof mk.weight === "number";
-    const name = String(mk.source || "market").replace(/^./, (c) => c.toUpperCase());
-    rows.appendChild(row("Market blend · " + name, used ? Math.round(mk.weight * 100) + "%" : "Not used today", { cls: "static" }));
-    const bits = [];
-    if (used) bits.push("Title odds are " + Math.round((1 - mk.weight) * 100) + "% model and " + Math.round(mk.weight * 100) + "% " + name + ".");
-    else bits.push("Today the odds are 100% model." + (mk.reason ? " Reason: " + mk.reason + "." : ""));
-    const f = mk.fetched_at ? new Date(mk.fetched_at) : null;
-    if (f && !Number.isNaN(f.getTime())) bits.push("Market read " + f.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) + ".");
-    box.appendChild(rows);
-    box.appendChild(el("p", "model-note", bits.join(" ")));
-  }
-  if (mk && typeof mk === "object") {
-    const pct = typeof mk.weight === "number" && mk.weight > 0 ? Math.round(mk.weight * 100) + "%" : "a small share";
-    box.appendChild(el("p", "model-note", "Why mix in a market? Its prices come from traders putting real money behind their views, " +
-      "so they pick up news and context a stats model can miss. The weight is kept small (" + pct + ") so the model stays independent and does the real work."));
-  }
-  const hasHealth = state.teams.some((t) => typeof t.health_adjustment === "number" || (Array.isArray(t.injuries) && t.injuries.length));
-  if (hasHealth) {
-    box.appendChild(el("p", "model-note", "Injuries: for each hurt player the model reads the expected return date and asks whether he will be healthy for the playoffs, " +
-      "because that is when the title is decided. Dates the report does not give are estimated, and estimated returns count for less. " +
-      "A star who is out now but back by April barely changes a team's odds; one who misses the playoffs changes them a lot."));
-  }
+  rows.setAttribute("aria-label", "Prediction market");
+  rows.appendChild(row("Prediction market", used ? Math.round(mk.weight * 100) + "%" : "Not used today", { cls: "static" }));
+  box.appendChild(rows);
 }
 
 // ---------- Header, status ----------

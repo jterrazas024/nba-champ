@@ -614,7 +614,6 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
 .star-tag { margin-top: 3px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 99px; background: var(--pill-bg); color: var(--pill-fg); }
 
 .model-extra { margin-top: 14px; }
-.model-note { margin: 8px 14px 0 0; font-size: 12.5px; line-height: 1.5; max-width: 52ch; color: color-mix(in srgb, var(--ink) 75%, var(--bg)); }
 
 @media (min-width: 900px) {
   #page-team > .team-pick, #page-team > .stars { grid-column: 1; padding-right: 0; }
@@ -622,5 +621,4 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
   #team-rows { grid-row: 1 / span 6; }
   .league { grid-row: 7; }
   .star { flex: 1 1 0; min-width: 0; }
-  .model-note { font-size: 14px; max-width: none; margin-right: 0; }
 }
