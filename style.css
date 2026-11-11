@@ -380,11 +380,8 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
 .lbar.sel i { background: var(--team); opacity: 1; outline: 1.5px solid var(--ink); outline-offset: 0; }
 .league-cap { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; margin: 6px 4px 0; color: color-mix(in srgb, var(--ink) 65%, var(--bg)); }
 
-.trend { padding: 10px 14px 0 0; }
+/* Small caption line used by the home graph and the map */
 .trend-line { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: color-mix(in srgb, var(--ink) 65%, var(--bg)); margin: 0; }
-.trend svg { display: block; width: 100%; height: 70px; overflow: visible; }
-.scrub { width: 100%; margin: 4px 0 0; accent-color: var(--ink); }
-.trend-read { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 
 /* ---------- Map ---------- */
 
@@ -551,8 +548,6 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
   .notes { padding-right: 0; font-size: 12px; }
   .league { grid-column: 2; grid-row: 4; padding: 22px 0 0; margin-top: 0; }
   .league-bars { height: min(17vh, 140px); }
-  .trend { grid-column: 2; grid-row: 5; padding: 14px 0 0; }
-  .trend svg { height: 100px; }
 
   /* 5. Map: text and the selected team on the left, a large plot on the right */
   #page-map { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); grid-template-rows: auto auto 1fr; padding-bottom: 20px; }

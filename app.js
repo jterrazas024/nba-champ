@@ -847,7 +847,6 @@ function renderTeam() {
   });
   $("team-notes").textContent = (team.notes || []).join(" · ");
   renderLeague();
-  renderTrend();
 }
 
 function renderTeamMetric() {
@@ -888,48 +887,6 @@ function renderLeague() {
   cap.appendChild(el("span", "", metric.label));
   cap.appendChild(el("span", "", "High → low, " + rows.length + " teams"));
   box.appendChild(cap);
-}
-
-function renderTrend() {
-  const box = $("trend");
-  box.textContent = "";
-  const team = selected();
-  const dates = state.data.history_dates;
-  const hist = team.history;
-  if (!Array.isArray(dates) || !Array.isArray(hist) || hist.length < 3 || dates.length !== hist.length) {
-    const n = Array.isArray(hist) ? hist.length : 0;
-    box.appendChild(el("p", "trend-line", "History builds daily · " + n + (n === 1 ? " day" : " days") + " so far"));
-    return;
-  }
-  const lo = Math.min(...hist);
-  const hi = Math.max(...hist);
-  const span = hi - lo || 1;
-  const pts = hist.map((v, i) => [(i / (hist.length - 1)) * 300, 56 - ((v - lo) / span) * 50]);
-  const read = el("div", "trend-read");
-  const dateEl = el("span", "", "");
-  const valEl = el("span", "", "");
-  read.appendChild(dateEl);
-  read.appendChild(valEl);
-  box.appendChild(read);
-  const svg = svgEl("svg", { viewBox: "0 0 300 62", preserveAspectRatio: "none", "aria-hidden": "true" }, box);
-  svgEl("path", { d: "M" + pts.map((p) => p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" L"), fill: "none", stroke: "currentColor", "stroke-width": 2.5, "vector-effect": "non-scaling-stroke", "stroke-linejoin": "round" }, svg);
-  const dot = svgEl("circle", { r: 4.5, style: "fill:var(--team);stroke:var(--ink);stroke-width:2" }, svg);
-  const slider = el("input", "scrub");
-  slider.type = "range";
-  slider.min = 0;
-  slider.max = hist.length - 1;
-  slider.value = hist.length - 1;
-  slider.setAttribute("aria-label", "Scrub through the history of " + team.name + " title odds");
-  const paint = () => {
-    const i = Number(slider.value);
-    dot.setAttribute("cx", pts[i][0]);
-    dot.setAttribute("cy", pts[i][1]);
-    dateEl.textContent = dates[i];
-    valEl.textContent = fmtPct1(hist[i]);
-  };
-  slider.addEventListener("input", paint);
-  paint();
-  box.appendChild(slider);
 }
 
 // ---------- Page 4: Map ----------
