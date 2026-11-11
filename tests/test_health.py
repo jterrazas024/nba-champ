@@ -91,8 +91,14 @@ def test_out_for_the_season_is_zero_credit():
 
 
 def test_back_well_before_the_playoffs_costs_little():
-    assert 0.9 < credit(date(2027, 1, 30)) <= 1.0
-    assert credit(date(2026, 11, 20)) > credit(date(2027, 2, 15)) > credit(date(2027, 3, 30))   # later return, less credit
+    assert credit(date(2027, 1, 30)) == config.HEALTH_CREDIT_CEILING   # fully back: as available as an average healthy player
+    assert credit(date(2026, 11, 20)) >= credit(date(2027, 2, 15)) > credit(date(2027, 3, 30))   # later return, less credit
+
+
+def test_credit_is_capped_and_discounted_when_the_return_is_a_guess():
+    assert credit(date(2026, 12, 1), "day_to_day") == config.HEALTH_CREDIT_CEILING
+    assert credit(date(2026, 12, 1), "unknown") < credit(date(2026, 12, 1), "dated")
+    assert credit(date(2026, 12, 1), "unknown") <= config.HEALTH_CREDIT_CEILING
 
 
 def test_back_just_before_the_playoffs_gets_partial_credit():
@@ -115,8 +121,8 @@ def test_credit_never_leaves_zero_to_one():
 
 
 def test_a_past_short_absence_is_healthy_but_a_past_timed_injury_is_overdue():
-    assert credit(date(2026, 11, 5), "day_to_day") == 1.0
-    assert 0.9 < credit(date(2026, 11, 5), "duration") < 1.0   # assumed back in INJURY_OVERDUE_DAYS, still before the playoffs
+    assert credit(date(2026, 11, 5), "day_to_day") == config.HEALTH_CREDIT_CEILING
+    assert 0.8 < credit(date(2026, 11, 5), "duration") <= config.HEALTH_CREDIT_CEILING   # assumed back in INJURY_OVERDUE_DAYS, still before the playoffs
 
 
 def test_once_the_playoffs_have_started_credit_is_measured_from_today():
@@ -160,7 +166,7 @@ def test_a_star_out_all_year_who_returns_before_the_playoffs_lifts_the_team():
     injuries = injury_table([("star", "AAA", "Out", "2026-10-16", "dated", date(2027, 1, 30))])
     result = health.team_health(injuries, now, LAST, GAMES, TODAY, END_YEAR)["AAA"]
     assert result.adjustment > 0.1
-    assert result.players[0].credit > 0.9 and result.notes and "Jan 30" in result.notes[0]
+    assert result.players[0].credit == config.HEALTH_CREDIT_CEILING and result.notes and "Jan 30" in result.notes[0]
 
 
 def test_the_same_star_is_worth_less_the_later_he_returns():

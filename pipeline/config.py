@@ -189,8 +189,10 @@ HEALTH_MIN_CURRENT_GAMES = 8      # fewer games this season: use last season's B
 HEALTH_MIN_PRIOR_GAMES = 20
 PRIOR_ASSUMED_HEALTH = 0.9        # share of a player the net-rating prior (last season's rating) is assumed to include
 HEALTH_SHORT_ABSENCE_DAYS = 10    # expected back within this many days: no adjustment (noise, not a health story)
-HEALTH_ADJ_MAX_DOWN = 0.8         # per-team cap in composite z units (0.8 z ~ 2.6 points of margin)
-HEALTH_ADJ_MAX_UP = 0.4           # returns are less certain than losses, so the cap is smaller
+HEALTH_CREDIT_CEILING = 0.9       # a recovered player is as available as an average healthy one (= PRIOR_ASSUMED_HEALTH)
+HEALTH_UNCERTAIN_CREDIT = {"unknown": 0.9, "long": 0.9, "indefinite": 0.85}   # return date is a guess: discount the credit
+HEALTH_ADJ_MAX_DOWN = 0.5         # per-team cap in composite z units (0.5 z ~ 1.6 points of margin); was 0.8
+HEALTH_ADJ_MAX_UP = 0.2           # returns are less certain than losses, so the cap is smaller; was 0.4
 HEALTH_NOTE_MIN = 0.03            # smaller player adjustments are not mentioned in notes
 HEALTH_MAX_PLAYERS_PUBLISHED = 3
 

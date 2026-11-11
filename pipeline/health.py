@@ -86,11 +86,20 @@ def playoff_credit(expected_return: date | None, category: str, today: date, end
     averaged over RETURN_DELAY_SCENARIOS (timelines slip more than they speed up), minus a small
     SEEDING_COST times the share of the remaining regular season he misses. A return date already in
     the past counts as healthy for short absences ("single_game", "day_to_day"); for a timed injury that
-    is still listed it means "overdue", so INJURY_OVERDUE_DAYS more days are assumed. Once the playoffs have
+    is still listed it means "overdue", so INJURY_OVERDUE_DAYS more days are assumed. The result is capped at
+    HEALTH_CREDIT_CEILING (a recovered player is only as available as the league's average healthy player, who
+    also misses games) and discounted for categories whose return date is a guess (HEALTH_UNCERTAIN_CREDIT). Once the playoffs have
     started, the credit is measured from today instead of the assumed first day.
     """
     if category == "season" or expected_return is None:
         return 0.0
+    credit = _raw_credit(expected_return, category, today, end_year)
+    credit *= config.HEALTH_UNCERTAIN_CREDIT.get(category, 1.0)
+    return min(credit, config.HEALTH_CREDIT_CEILING)
+
+
+def _raw_credit(expected_return: date, category: str, today: date, end_year: int) -> float:
+    """Return the playoff credit before the ceiling and the uncertainty discount (see playoff_credit)."""
     start = max(playoff_start(end_year), today)
     back = expected_return
     if back <= today:
