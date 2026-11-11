@@ -28,7 +28,7 @@ import pandas as pd
 # Allow running as a plain script (python pipeline/build_odds.py) as well as a module.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline import config, features, model, playoffs, sim, sim_inputs  # noqa: E402
+from pipeline import config, features, health, model, playoffs, sim, sim_inputs  # noqa: E402
 from pipeline.fetch import BRClient, Blocked, FetchError  # noqa: E402
 from pipeline.parse import ParseError, parse_games, parse_injuries, parse_players, parse_ratings  # noqa: E402
 from pipeline.seed import daily_seed  # noqa: E402
@@ -143,6 +143,11 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
     composite, contributions, effective = model.composite_scores(z)
     if composite.isna().any():
         raise BuildError(f"no usable inputs for: {', '.join(composite.index[composite.isna()])}")
+    team_health: dict[str, health.TeamHealth] = {}
+    if config.INJURY_TIMELINES_ENABLED:   # SPEC 6.7: playoff-health adjustment, in composite units, before the penalties
+        team_health = health.team_health(injuries, roster, features.current_roster(seasons[1]), games_played,
+                                         today, end_year)
+        composite = composite + pd.Series({tid: h.adjustment for tid, h in team_health.items()}).reindex(composite.index).fillna(0.0)
     penalty, penalty_notes = model.penalties(ratings, values["net_rating"], today, end_year)
     final = composite + penalty
     softmax_probs = model.round_probs(model.softmax(final))
@@ -179,8 +184,11 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
             "history": history[tid],
             "composite": round(float(final[tid]), 3),
             "inputs": inputs,
-            "notes": _notes(int(games_played[tid]), penalty_notes[tid], stars[tid], availability[tid], inputs),
+            "notes": _notes(int(games_played[tid]), penalty_notes[tid], stars[tid], availability[tid], inputs,
+                            team_health[tid].notes if team_health else ()),
         }
+        if team_health:
+            entry.update(_health_fields(team_health[tid]))
         if playoff_mode:
             entry.update(playoff_sim[0][tid])
             entry["softmax_prob"] = float(softmax_probs[tid])
@@ -376,13 +384,23 @@ def _previous_probs(previous: dict | None) -> dict[str, float]:
     return {t["id"]: t["title_prob"] for t in previous.get("teams", [])}
 
 
+def _health_fields(team: health.TeamHealth) -> dict:
+    """Return the optional per-team injury fields (SPEC.md section 7): `health_adjustment` (composite units,
+    already included in `composite`) and `injuries` (the biggest few players behind it)."""
+    players = [{"player": p.name, "status": p.status, "expected_return": p.expected_return.isoformat() if p.expected_return else None,
+                "playoff_credit": p.credit, "adjustment": round(p.adjustment, 3)}
+               for p in team.players if abs(p.adjustment) >= config.HEALTH_NOTE_MIN][:config.HEALTH_MAX_PLAYERS_PUBLISHED]
+    return {"health_adjustment": round(team.adjustment, 3), "injuries": players}
+
+
 def _notes(games: int, penalty_notes: list[str], star: features.StarResult,
-           availability: features.AvailabilityResult, inputs: dict) -> list[str]:
+           availability: features.AvailabilityResult, inputs: dict, health_notes: tuple[str, ...] = ()) -> list[str]:
     """Return up to MAX_NOTES short notes explaining anything unusual about this team's numbers."""
     notes = []
     if games < EARLY_SEASON_NOTE_GAMES:
         notes.append(f"Early season: only {games} games played, so net rating leans on last season")
     notes += penalty_notes
+    notes += list(health_notes)[:2]
     notes += list(availability.notes)
     notes += list(star.notes)
     missing = [INPUT_LABELS[k] for k in ("net_rating", "star_power", "recent_form", "star_availability",

@@ -56,6 +56,7 @@ def validate_odds(odds: dict) -> list[str]:
     problems += _check_history(odds)
     problems += check_sim(odds)
     problems += _check_playoff_mode(odds)
+    problems += _check_health(odds)
 
     if len(json.dumps(odds, indent=1).encode()) >= MAX_BYTES:
         problems.append("file would be 100 KB or larger")
@@ -127,6 +128,34 @@ def check_sim(odds: dict) -> list[str]:
             problems.append(f"{tid} sim.seed_avg must be null or a number between 1 and 15")
     if probs and (len(probs) != len(odds["teams"]) or abs(sum(probs) - 1.0) > 1e-6):
         problems.append(f"sim_prob values sum to {sum(probs):.6f} over {len(probs)} teams, not 1.0 over every team")
+    return problems
+
+
+def _check_health(odds: dict) -> list[str]:
+    """Checks for the optional injury fields (SPEC.md sections 6.7 and 7): per-team `health_adjustment` (a number)
+    and `injuries` (a list of {player, status, expected_return (YYYY-MM-DD or null), playoff_credit in [0, 1],
+    adjustment}). They only run when those fields are present."""
+    problems: list[str] = []
+    for team in odds["teams"]:
+        tid = team.get("id")
+        if "health_adjustment" in team:
+            v = team["health_adjustment"]
+            if not (isinstance(v, (int, float)) and not isinstance(v, bool)):
+                problems.append(f"{tid} health_adjustment must be a number")
+        for entry in team.get("injuries", []) if isinstance(team.get("injuries", []), list) else [None]:
+            ok = isinstance(entry, dict) and isinstance(entry.get("player"), str) and isinstance(entry.get("status"), str)
+            credit = entry.get("playoff_credit") if isinstance(entry, dict) else None
+            ok = ok and isinstance(credit, (int, float)) and 0 <= credit <= 1
+            ok = ok and isinstance(entry.get("adjustment"), (int, float))
+            returns = entry.get("expected_return") if isinstance(entry, dict) else None
+            if returns is not None:
+                try:
+                    datetime.strptime(returns, "%Y-%m-%d")
+                except (TypeError, ValueError):
+                    ok = False
+            if not ok:
+                problems.append(f"{tid} has a malformed injuries entry")
+                break
     return problems
 
 

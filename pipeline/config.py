@@ -155,3 +155,41 @@ UNCERTAINTY_HALF_GAMES = 20       # noise sd = RATING_UNCERTAINTY_POINTS * sqrt(
 # the softmax). Set to True to feed it the composite AFTER penalties instead (the way MARGIN_PER_Z
 # was fitted on 2026-11-08).
 SIM_USES_PENALTIES = False
+
+# ---- Injury and return timelines (SPEC.md section 6.7; approved Nov 10, 2026) ----
+# One switch. False reproduces the old behavior exactly: the crude top-2-star factor (INJURY_FACTORS) is applied
+# inside star availability, and no health adjustment is added to the composite. True replaces that factor with a
+# per-player return timeline (pipeline/health.py) and adds a capped team health adjustment, in composite (z) units.
+INJURY_TIMELINES_ENABLED = True
+
+# Assumed days out when the report gives no date and no duration (days from the report's update date).
+INJURY_PRIOR_DAYS = {"day_to_day": 4, "single_game": 2, "week_to_week": 21, "month": 45,
+                     "unknown": 35, "indefinite": 75, "long": 100}
+INJURY_REEVAL_EXTRA_DAYS = 7      # "re-evaluated in two weeks" means back later than that, on average
+INJURY_AT_LEAST_STRETCH = 1.25    # "at least 4 weeks" is read as 4 x 1.25 weeks
+INJURY_OVERDUE_DAYS = 14          # a timed injury past its date but still listed: assume this many more days
+SEVERAL_MONTHS_DAYS = 120
+FEW_WEEKS_DAYS = 21
+
+# Playoff health (SPEC 6.7). Dates are (month, day) in the year the season ends.
+PLAYOFF_START = (4, 18)           # first-round tip-off, about
+REGULAR_SEASON_END = (4, 12)
+FULL_CREDIT_DAYS_BEFORE = 21      # back at least this long before the playoffs: full credit
+CREDIT_AT_PLAYOFF_START = 0.6     # back on playoff day one: partial credit (rust, minutes limits)
+CREDIT_FADE_DAYS_AFTER = 35       # back this long into the playoffs: no credit
+SEEDING_COST = 0.15               # credit lost if he misses the whole rest of the regular season (seeding, rust)
+RETURN_DELAY_SCENARIOS = ((0, 0.6), (21, 0.4))   # (days of setback, weight): timelines slip more than they speed up
+
+# Player value and team adjustment (SPEC 6.7).
+REPLACEMENT_BPM = -2.0            # value = (BPM - replacement) x minutes share
+HEALTH_BPM_SHRINK = 0.75          # BPM is noisy: shrink toward 0 before use
+HEALTH_MIN_MPG = 12               # rotation players only
+HEALTH_MAX_MPG = 38
+HEALTH_MIN_CURRENT_GAMES = 8      # fewer games this season: use last season's BPM and minutes
+HEALTH_MIN_PRIOR_GAMES = 20
+PRIOR_ASSUMED_HEALTH = 0.9        # share of a player the net-rating prior (last season's rating) is assumed to include
+HEALTH_SHORT_ABSENCE_DAYS = 10    # expected back within this many days: no adjustment (noise, not a health story)
+HEALTH_ADJ_MAX_DOWN = 0.8         # per-team cap in composite z units (0.8 z ~ 2.6 points of margin)
+HEALTH_ADJ_MAX_UP = 0.4           # returns are less certain than losses, so the cap is smaller
+HEALTH_NOTE_MIN = 0.03            # smaller player adjustments are not mentioned in notes
+HEALTH_MAX_PLAYERS_PUBLISHED = 3

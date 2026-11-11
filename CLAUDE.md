@@ -45,6 +45,7 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 - Starting weights live in one place (`pipeline/config.py`) and must sum to 1.0. In points: net rating 38, star power 25, recent form 10, star availability 10, rotation availability 5, divided by 88. Clutch and core net rating are dropped (weight 0; no usable data source).
 - If an input is not available, renormalize the remaining weights rather than filling with fake numbers (per team if just that team lacks it).
 - Early season: blend current-season stats with a preseason prior using `w_current = games_played / (games_played + 20)`.
+- Injuries: `config.INJURY_TIMELINES_ENABLED` (SPEC.md 6.7) switches per-player return timelines and a capped team health adjustment; False restores the old top-2-star injury factor exactly.
 - Star metric is BPM for now. Don't swap it without asking.
 - Never present placeholder or fake data as real. Fake data is only for tests and must be labeled `"is_sample": true` if it ever lands in `odds.json`. The live file is real data built by `build_odds.py`.
 

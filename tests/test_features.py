@@ -11,6 +11,12 @@ from pipeline.features import (current_roster, net_rating, recent_form, rotation
 TODAY = date(2026, 11, 8)
 
 
+@pytest.fixture(autouse=True)
+def old_injury_behavior(monkeypatch):
+    """These tests cover the original top-2-star injury factor, which is what INJURY_TIMELINES_ENABLED=False runs."""
+    monkeypatch.setattr(config, "INJURY_TIMELINES_ENABLED", False)
+
+
 def ratings(rows):
     """rows: (team_id, games, nrtg, sos)"""
     return pd.DataFrame(rows, columns=["team_id", "games", "nrtg", "sos"])

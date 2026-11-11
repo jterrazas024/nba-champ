@@ -158,7 +158,8 @@ def star_availability(
     `seasons` holds season_games() for this season, last season, and the season before (in that
     order). Per star: games played / games possible in each season, weighted 0.5 / 0.3 / 0.2.
     Seasons before the player's first appearance are skipped (rookies); a season he missed after
-    that counts as 0. Then the current injury report scales the result (INJURY_FACTORS).
+    that counts as 0. Then, only if INJURY_TIMELINES_ENABLED is False, the current injury report scales the
+    result (INJURY_FACTORS).
     A team's value is the average over its stars.
     """
     results = {}
@@ -169,7 +170,9 @@ def star_availability(
         values, notes = [], []
         for star in result.stars:
             base = _player_availability(star.player_id, seasons, games_by_team[team_id])
-            factor, note = _injury_factor(star, injuries, today)
+            # With INJURY_TIMELINES_ENABLED the injury report is handled per player in pipeline/health.py
+            # (SPEC 6.7); this input then keeps only the games-played history.
+            factor, note = (1.0, None) if config.INJURY_TIMELINES_ENABLED else _injury_factor(star, injuries, today)
             values.append(base * factor)
             if note:
                 notes.append(note)

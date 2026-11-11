@@ -39,7 +39,19 @@ def test_stronger_teams_rank_higher_and_the_weakest_is_last(built):
     assert [t["rank"] for t in teams] == list(range(1, 31))
 
 
-def test_an_injured_star_costs_the_team_availability(built):
+@pytest.fixture(scope="module")
+def built_old_injuries():
+    """The same league with INJURY_TIMELINES_ENABLED=False (the original star factor)."""
+    old = config.INJURY_TIMELINES_ENABLED
+    config.INJURY_TIMELINES_ENABLED = False
+    try:
+        return build(FakeClient(league_pages()), TODAY, None)
+    finally:
+        config.INJURY_TIMELINES_ENABLED = old
+
+
+def test_an_injured_star_costs_the_team_availability(built_old_injuries):
+    built = (None, built_old_injuries)
     by_id = {t["id"]: t for t in built[1].odds["teams"]}
     injured, healthy = by_id[config.TEAMS[29].id], by_id[config.TEAMS[28].id]  # the injury report lists TEAMS[29]'s best player as Out
     assert injured["inputs"]["star_availability"]["value"] < healthy["inputs"]["star_availability"]["value"]
@@ -80,8 +92,8 @@ def test_the_composite_is_the_sum_of_contributions(built):
     assert team["composite"] == pytest.approx(sum(i["contribution"] for i in team["inputs"].values() if i), abs=0.01)
 
 
-def test_star_injuries_show_up_in_notes(built):
-    notes = {t["id"]: t["notes"] for t in built[1].odds["teams"]}
+def test_star_injuries_show_up_in_notes(built_old_injuries):
+    notes = {t["id"]: t["notes"] for t in built_old_injuries.odds["teams"]}
     assert any("(star): Out" in n for n in notes[config.TEAMS[29].id])
 
 
