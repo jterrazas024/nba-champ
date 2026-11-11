@@ -21,6 +21,7 @@ import sys
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -28,7 +29,7 @@ import pandas as pd
 # Allow running as a plain script (python pipeline/build_odds.py) as well as a module.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from pipeline import config, features, model, playoffs, sim, sim_inputs  # noqa: E402
+from pipeline import config, features, market, model, playoffs, sim, sim_inputs  # noqa: E402
 from pipeline.fetch import BRClient, Blocked, FetchError  # noqa: E402
 from pipeline.parse import ParseError, parse_games, parse_injuries, parse_players, parse_ratings  # noqa: E402
 from pipeline.seed import daily_seed  # noqa: E402
@@ -36,7 +37,8 @@ from pipeline.validate import check_sim, validate_odds  # noqa: E402
 
 ODDS_PATH = Path(__file__).resolve().parent.parent / "data" / "odds.json"
 MODEL_VERSION = "v0"
-MIN_ROSTER_PLAYERS = 8          # sanity check: a team with fewer parsed players means a broken page
+MarketSource = Callable[[int, date], market.MarketData]   # returns the Polymarket read for (end_year, today)
+MIN_ROSTER_PLAYERS = 8         # sanity check: a team with fewer parsed players means a broken page
 MAX_DAILY_MOVE = 0.15           # sanity check: no team's title probability moves more than this in one update
 HISTORY_DAYS = 30               # how many daily values each team keeps in `history` (SPEC.md section 7)
 CHANGE_WINDOW_DAYS = 3          # prob_change_1d needs an earlier history entry at most this many days back
@@ -96,7 +98,8 @@ def fetch_recent_games(client: BRClient, end_year: int, today: date, team_ids: l
 
 # ---------- building the file ----------
 
-def build(client: BRClient, today: date, previous: dict | None, with_sim: bool = True) -> BuildResult:
+def build(client: BRClient, today: date, previous: dict | None, with_sim: bool = True,
+          market_source: MarketSource | None = None) -> BuildResult:
     """Fetch, compute, and assemble the odds. Raises BuildError/ParseError/FetchError on trouble.
 
     With `with_sim`, the playoff simulation is run afterwards and published in extra fields
@@ -106,6 +109,10 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
     Once every team has 82 games the build is in playoff mode: the simulation is required (it IS
     the headline, SPEC.md section 6.6) and any problem with it fails the build, which leaves the
     previous file in place.
+
+    `market_source(end_year, today)` returns a market.MarketData (the Polymarket read, SPEC.md section
+    6.7) and is blended in at config.MARKET_WEIGHT. If it is None or fails in any way, the weight is 0
+    and the odds are the pure model's; the market can never fail the build.
     """
     end_year = config.season_end_year(today)
     ratings = parse_ratings(client.get_html(f"/leagues/NBA_{end_year}.html", f"ratings_{end_year}"))
@@ -154,6 +161,11 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
         probs = pd.Series({tid: v["sim_prob"] for tid, v in per_team_sim.items()}).reindex(softmax_probs.index)
     else:
         probs = softmax_probs
+    model_probs = probs
+    live_ids = post.alive(list(probs.index)) if playoff_mode else list(probs.index)
+    market_block, market_series = _blend_market(market_source, end_year, today, live_ids)
+    if market_series is not None:
+        probs = market.blend(model_probs, market_series, config.MARKET_WEIGHT)
     ranks = model.rank_teams(probs, final)
 
     history_dates, history = build_history(previous, today, {tid: float(p) for tid, p in probs.items()})
@@ -181,6 +193,9 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
             "inputs": inputs,
             "notes": _notes(int(games_played[tid]), penalty_notes[tid], stars[tid], availability[tid], inputs),
         }
+        if market_series is not None:
+            entry["model_prob"] = float(model_probs[tid])
+            entry["market_prob"] = round(float(market_series[tid]), 6)
         if playoff_mode:
             entry.update(playoff_sim[0][tid])
             entry["softmax_prob"] = float(softmax_probs[tid])
@@ -199,6 +214,7 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
         "headline_source": "simulation" if playoff_mode else "softmax",
         "temperature": config.TEMPERATURE,
         "weights": dict(config.WEIGHTS),
+        "market": market_block,
         "history_dates": history_dates,
         "teams": teams,
     }
@@ -211,6 +227,36 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
                                     final if config.SIM_USES_PENALTIES else composite)
     note = "with" if simulated else "without"
     return BuildResult(odds, f"Built odds for {len(teams)} teams ({client.requests_made} requests, {note} simulation).")
+
+
+# ---------- market consensus (SPEC.md section 6.7) ----------
+
+def default_market_source(end_year: int, today: date) -> market.MarketData:
+    """Fetch the Polymarket champion market (one cached GET). Used by the command line."""
+    return market.get_market(end_year, today)
+
+
+def _blend_market(source: MarketSource | None, end_year: int, today: date,
+                  live_ids: list[str]) -> tuple[dict, pd.Series | None]:
+    """Return (the `market` block of odds.json, market probabilities or None).
+
+    Any failure (no source, network, a block, a malformed or incomplete response) gives weight 0 and
+    the reason in the block, plus one WARNING line on stderr. Never raises.
+    """
+    block = {"source": config.MARKET_SOURCE, "fetched_at": None, "weight": 0.0, "used": False}
+    if source is None:
+        block["reason"] = "market not requested"
+        return block, None
+    try:
+        data = source(end_year, today)
+        series = market.market_probs(data.prices, live_ids)
+    except Exception as err:  # noqa: BLE001  (deliberately broad: the market must never stop the model's odds)
+        reason = " ".join(f"{type(err).__name__}: {err}".split())
+        print(f"WARNING market blend skipped, publishing pure model odds ({reason})", file=sys.stderr)
+        block["reason"] = reason[:200]
+        return block, None
+    block.update(fetched_at=data.fetched_at, weight=config.MARKET_WEIGHT, used=True, event=data.slug)
+    return block, series
 
 
 # ---------- the playoff simulation, shadow mode (SPEC.md sections 6.4 and 7) ----------
@@ -441,11 +487,11 @@ def _read_previous(path: Path) -> dict | None:
         return None
 
 
-def run(client: BRClient, today: date, out_path: Path) -> BuildResult:
+def run(client: BRClient, today: date, out_path: Path, market_source: MarketSource | None = None) -> BuildResult:
     """Build, check, and (if everything passes) write the file. The previous file is read first
     so we can compute changes and compare. Raises BuildError if the checks fail."""
     previous = _read_previous(out_path)
-    result = build(client, today, previous)
+    result = build(client, today, previous, market_source=market_source)
     if result.odds is None:
         return result
     problems = check_before_publishing(result.odds, previous)
@@ -465,7 +511,7 @@ def main() -> int:
 
     client = BRClient()
     try:
-        result = run(client, today, args.out)
+        result = run(client, today, args.out, market_source=default_market_source)
     except Blocked as err:
         print(f"ERROR {err}; previous {args.out.name} kept", file=sys.stderr)
         return 2

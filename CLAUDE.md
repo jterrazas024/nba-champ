@@ -42,6 +42,7 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 ## Model rules
 
 - After game 82 the build is in playoff mode (SPEC.md section 6.6): `title_prob` comes from the simulation conditioned on the play-in and series played; eliminated teams are exactly 0; the 15-point daily guard does not apply there (a no-revival check does). Read the postseason through `pipeline/playoffs.py`; never publish a guessed bracket.
+- Polymarket (approved Nov 10, 2026; Polymarket only, never Kalshi) supplies a market consensus blended into the final probability: `final = 0.95*model + 0.05*market` (`config.MARKET_WEIGHT`, SPEC.md section 6.7; blend probabilities, not z-scores). In playoff mode it is applied over live teams only, so eliminated teams stay exactly 0. If the fetch fails or is malformed, the build must not fail: weight 0, pure model odds, `market.used=false` in `odds.json`. The z-score input weights below are unaffected.
 - Starting weights live in one place (`pipeline/config.py`) and must sum to 1.0. In points: net rating 38, star power 25, recent form 10, star availability 10, rotation availability 5, divided by 88. Clutch and core net rating are dropped (weight 0; no usable data source).
 - If an input is not available, renormalize the remaining weights rather than filling with fake numbers (per team if just that team lacks it).
 - Early season: blend current-season stats with a preseason prior using `w_current = games_played / (games_played + 20)`.
@@ -49,6 +50,8 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 - Never present placeholder or fake data as real. Fake data is only for tests and must be labeled `"is_sample": true` if it ever lands in `odds.json`. The live file is real data built by `build_odds.py`.
 
 ## Data source rules
+
+- Polymarket Gamma API (`pipeline/market.py`): public, no key, one cached GET per run to `events?slug=nba-<year>-champion`, honest User-Agent, 20 s timeout, 3 attempts with backoff. On any 403/429 stop and do not retry. Do not add other market sources (e.g. Kalshi) without asking.
 
 - Basketball-Reference (the chosen source; tested from Actions Nov 7, 2026): **never exceed 20 requests per minute** (a violation blocks the IP for up to a day). Pace requests (one every ~4 seconds; robots.txt asks for 3), cache every page under `data/raw/`, and never re-fetch what is already cached for the day. Identify the project in the User-Agent. Stay out of the paths robots.txt disallows (`*/gamelog/`, `*/splits/`, `*/on-off/`, `*/lineups/`, `*/shooting/`, `/play-index/` searches). **On any 403, 429, or bot-check page, stop the whole run and do not retry.** It can block non-US IPs (a Mexican IP got a Cloudflare 403), so test from a US location.
 - `stats.nba.com` / `nba_api` and `cdn.nba.com`: **do not use.** They time out or return 403 from every network we tried (home, hotspot, VPN), and others report 403 from GitHub Actions. Never disguise requests as a browser or otherwise work around a block; ask first.
