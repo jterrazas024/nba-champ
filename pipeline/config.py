@@ -193,3 +193,14 @@ HEALTH_ADJ_MAX_DOWN = 0.8         # per-team cap in composite z units (0.8 z ~ 2
 HEALTH_ADJ_MAX_UP = 0.4           # returns are less certain than losses, so the cap is smaller
 HEALTH_NOTE_MIN = 0.03            # smaller player adjustments are not mentioned in notes
 HEALTH_MAX_PLAYERS_PUBLISHED = 3
+
+# ---- Market consensus: Polymarket (approved Nov 10, 2026; Polymarket only, not Kalshi; SPEC.md section 6.7) ----
+# final = (1 - MARKET_WEIGHT) * model + MARKET_WEIGHT * market, blended as probabilities. If the market
+# cannot be fetched or read, the effective weight is 0 and the published odds are the pure model's.
+MARKET_WEIGHT = 0.05
+MARKET_SOURCE = "polymarket"
+MARKET_API_URL = "https://gamma-api.polymarket.com/events"   # public Gamma API, no key
+MARKET_SLUG_TEMPLATE = "nba-{end_year}-champion"             # the "NBA: 2027 Champion" event
+MARKET_MIN_PRICE = 0.0005      # floor for a Yes price (the market's own smallest tick) before normalizing
+# Market name (the market's `groupItemTitle`) -> team id. Every one of the 30 teams must be found.
+MARKET_TEAM_IDS = {**{t.name: t.id for t in TEAMS}, "LA Clippers": "LAC"}

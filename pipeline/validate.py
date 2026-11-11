@@ -55,6 +55,7 @@ def validate_odds(odds: dict) -> list[str]:
 
     problems += _check_history(odds)
     problems += check_sim(odds)
+    problems += _check_market(odds)
     problems += _check_playoff_mode(odds)
     problems += _check_health(odds)
 
@@ -159,6 +160,33 @@ def _check_health(odds: dict) -> list[str]:
     return problems
 
 
+def _check_market(odds: dict) -> list[str]:
+    """Checks for the optional market fields (SPEC.md section 6.7): top-level `market` {source, fetched_at,
+    weight, used} and per-team `market_prob` / `model_prob`. They only run when present. The weight must be
+    0 when the market was not used, and every team carries both probabilities when it was."""
+    problems: list[str] = []
+    block = odds.get("market")
+    if block is not None:
+        if not isinstance(block, dict):
+            return ["market must be an object"]
+        weight, used = block.get("weight"), block.get("used")
+        if not isinstance(used, bool):
+            problems.append("market.used must be true or false")
+        if not isinstance(weight, (int, float)) or isinstance(weight, bool) or not 0 <= weight <= 1:
+            problems.append("market.weight must be a number between 0 and 1")
+        elif used is False and weight != 0:
+            problems.append("market.weight must be 0 when the market was not used")
+        if used is True and not block.get("fetched_at"):
+            problems.append("market.fetched_at is required when the market was used")
+    for team in odds["teams"]:
+        for key in ("market_prob", "model_prob"):
+            if key in team and not (isinstance(team[key], (int, float)) and 0 <= team[key] <= 1):
+                problems.append(f"{team.get('id')} {key} must be a number between 0 and 1")
+        if isinstance(block, dict) and block.get("used") is True and ("market_prob" not in team or "model_prob" not in team):
+            problems.append(f"{team.get('id')} needs market_prob and model_prob when the market was used")
+    return problems
+
+
 def _check_playoff_mode(odds: dict) -> list[str]:
     """Checks for the optional playoff-mode fields (SPEC.md section 6.6): `phase`, `headline_source`, per-team
     `status` and `softmax_prob`. When the headline comes from the simulation, title_prob must equal sim_prob,
@@ -170,6 +198,7 @@ def _check_playoff_mode(odds: dict) -> list[str]:
         problems.append(f"phase must be one of {', '.join(PHASES)}")
     if source is not None and source not in HEADLINE_SOURCES:
         problems.append(f"headline_source must be one of {', '.join(HEADLINE_SOURCES)}")
+    blended = bool((odds.get("market") or {}).get("used"))     # the market blend moves title_prob off sim_prob
     champions = []
     for team in odds["teams"]:
         tid = team.get("id")
@@ -181,7 +210,7 @@ def _check_playoff_mode(odds: dict) -> list[str]:
         if status == "champion":
             champions.append(tid)
         if source == "simulation":
-            if team.get("sim_prob") != team.get("title_prob"):
+            if not blended and team.get("sim_prob") != team.get("title_prob"):
                 problems.append(f"{tid} title_prob must equal sim_prob when the headline comes from the simulation")
             if status == "eliminated" and team.get("title_prob") != 0:
                 problems.append(f"{tid} is eliminated but has title odds")
