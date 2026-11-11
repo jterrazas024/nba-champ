@@ -1,6 +1,6 @@
 """Tests for injury and return timelines (SPEC.md section 6.7): date reading, playoff credit, the team
 adjustment, and the on/off switch (config.INJURY_TIMELINES_ENABLED)."""
-from datetime import date
+from datetime import date, timedelta
 
 import pandas as pd
 import pytest
@@ -54,7 +54,7 @@ def test_season_ending_injuries_have_no_return_date(text, status):
     ("Out (Knee) - listed as week-to-week", "Out", "week_to_week", 21),
     ("Day To Day (Ankle) - did not play on Friday's (Oct. 16) game", "Day To Day", "day_to_day", 4),
     ("Out (Ankle) - Capela is OUT for Saturday's (Oct. 17) game", "Out", "single_game", 2),
-    ("Out (Back) - sore", "Out", "unknown", 35),          # nothing usable in the text: the fixed prior
+    ("Out (Back) - evaluated by the team", "Out", "unknown", 35),          # nothing usable in the text: the fixed prior
 ])
 def test_without_a_date_a_fixed_prior_is_used(text, status, category, days):
     when, kind, estimated = parse_return_info(text, UPDATE, status)
@@ -273,3 +273,40 @@ def test_the_validator_rejects_a_malformed_injuries_entry(monkeypatch):
 def test_the_module_exposes_the_flag_default():
     assert config.INJURY_TIMELINES_ENABLED is True
     assert build_odds.health is health
+
+
+@pytest.mark.parametrize("text,status,category,days", [
+    ("Out (Ankle) - Williams has been diagnosed with a dislocated left ankle and fractured fibula, which will require surgery, Shams Charania of ESPN.",
+     "Out", "surgery_long", 150),
+    ("Out (Shoulder) - Wallace has been diagnosed with a torn labrum in his left shoulder and will require surgery, per Shams Charania of ESPN.",
+     "Out", "surgery_long", 150),
+    ("Out (Meniscus) - Sheppard is scheduled for surgery to repair a torn meniscus in his left knee on Wednesday (Oct. 28)", "Out", "surgery_long", 100),
+    ("Out (Heel) - Ingram won't be ready for the start of the season due to a partially torn Achilles", "Out", "surgery_long", 150),
+    ("Out (Achilles) - DiVincenzo said he remains confident that he'll return during the 2026-27 season", "Out", "major_return", 200),
+    ("Out (Ankle) - Capela has a mild sprain with no timetable shared by the team", "Out", "indefinite", 75),
+    ("Out (Ankle) - he rolled his ankle in a sprain", "Out", "minor", 14),
+    ("Out (Hamstring) - Penda suffered a partially torn right hamstring and there are no updates on a timetable", "Out", "indefinite", 75),
+    ("Out (Knee) - Gilbert underwent a non-surgical procedure to address knee inflammation", "Out", "unknown", 35),
+])
+def test_severity_priors_when_the_text_gives_no_date(text, status, category, days):
+    when, kind, estimated = parse_return_info(text, UPDATE, status)
+    assert (kind, estimated) == (category, True)
+    assert when == UPDATE + timedelta(days=days)
+
+
+def test_at_least_weeks_counts_from_the_date_written_in_the_text():
+    text = ("Out (Knee) - Holmgren underwent a biological treatment on Friday (Oct. 30) to address a small patellar "
+            "tendon tear and will miss at least 8-10 weeks")
+    when, kind, estimated = parse_return_info(text, date(2026, 10, 29), "Out")
+    assert (when, kind, estimated) == (date(2026, 10, 30) + timedelta(days=79), "duration", False)   # 9 weeks x 1.25
+
+
+def test_a_long_guessed_return_is_discounted_and_one_after_the_playoffs_start_gets_little():
+    from pipeline.health import playoff_credit
+    # surgery on Oct 26 -> back about Mar 25, three weeks before the playoffs: near-full credit, but discounted (a guess)
+    when, kind, _ = parse_return_info("Out (Ankle) - fractured fibula, will require surgery", date(2026, 10, 26), "Out")
+    credit = playoff_credit(when, kind, date(2026, 11, 8), 2027)
+    assert 0.5 < credit <= 0.85
+    # a fracture on Jan 20 -> back about Jun 19: after the playoffs start, so nothing
+    late, late_kind, _ = parse_return_info("Out (Leg) - suffered a leg fracture", date(2027, 1, 20), "Out")
+    assert playoff_credit(late, late_kind, date(2027, 1, 21), 2027) == 0.0

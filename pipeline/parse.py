@@ -153,6 +153,50 @@ def _count(token: str) -> float:
     return float(_WORDS.get(token.lower(), token) if not token.isdigit() else token)
 
 
+_PARTIAL = r"partial(?:ly)?|small|mild|minor|slight"
+_MAJOR_WORDS = r"\bacl\b|anterior cruciate|achilles|ruptur"
+_SURGERY_WORDS = (r"(?<!non-)(?<!non )\bsurg(?:ery|ical)\b|fractur|\btorn\b|\btear\b|\btears\b|dislocat|lisfranc|"
+                  r"broken")
+_MINOR_WORDS = r"day-to-day|sprain|soreness|sore\b|bruise|contusion|flu\b|cold\b|stiff|tightness|spasm"
+_TEXT_DATE = re.compile(rf"\({_MONTH}\s+(\d{{1,2}})\)")
+
+
+def _anchor_date(text: str, update: date) -> date:
+    """Return the date durations count from: the update date, or a later date written in the text.
+
+    "Holmgren underwent treatment on Friday (Oct. 30)" under an Oct. 29 update: the clock starts Oct. 30.
+    Only a date up to INJURY_ANCHOR_MAX_DAYS after the update counts (a later one is a game date, not the injury).
+    """
+    for match in _TEXT_DATE.finditer(text):
+        found = _next_date(_month_number(match.group(1)), int(match.group(2)), update - timedelta(days=60))
+        if 0 < (found - update).days <= config.INJURY_ANCHOR_MAX_DAYS:
+            return found
+    return update
+
+
+def _severity_category(text: str) -> str | None:
+    """Return "major_return" / "surgery_long" for a severe injury with no stated length, else None.
+
+    ACL, Achilles or a rupture: "major_return" (he is said to come back this season, since out-for-the-season
+    was handled earlier). Surgery, a fracture, a tear or a dislocation: "surgery_long". A partial, small or mild
+    tear is not severe here (it falls through to the generic phrases). A severe injury word beside a partial word
+    ("partially torn Achilles") counts as "surgery_long", one step down.
+    """
+    partial = re.search(_PARTIAL, text) is not None
+    if re.search(_MAJOR_WORDS, text):
+        return "surgery_long" if partial else "major_return"
+    if re.search(_SURGERY_WORDS, text) and not partial:
+        return "surgery_long"
+    return None
+
+
+def _severity_days(text: str, category: str) -> int:
+    """Return the assumed days out for a severity category (config.INJURY_PRIOR_DAYS, meniscus shorter)."""
+    if category == "surgery_long" and "menisc" in text:
+        return config.INJURY_PRIOR_DAYS["meniscus"]
+    return config.INJURY_PRIOR_DAYS[category]
+
+
 def parse_return_info(description: str, update: date | None, status: str) -> tuple[date | None, str, bool]:
     """Read an expected return from an injury entry (SPEC.md section 6.7).
 
@@ -186,6 +230,7 @@ def parse_return_info(description: str, update: date | None, status: str) -> tup
             return found, "dated", False
 
     # 3. A length of time: "re-evaluated in approximately six weeks", "at least 3-4 weeks", "up to two months".
+    anchored = _anchor_date(text, update)
     duration = re.search(rf"(at least|up to|approximately|about|around|roughly|another|nearly|next|within|over)?\s*"
                          rf"{_NUMBER}(?:\s*(?:-to-|-|\u2013|to)\s*{_NUMBER})?[\s-]*(day|week|month)s?\b", text)
     if duration:
@@ -196,13 +241,18 @@ def parse_return_info(description: str, update: date | None, status: str) -> tup
             days *= config.INJURY_AT_LEAST_STRETCH
         if re.search(r"re-?evaluat|reassess", text):
             days += config.INJURY_REEVAL_EXTRA_DAYS
-        return update + timedelta(days=round(days)), "duration", False
+        return anchored + timedelta(days=round(days)), "duration", False
     if re.search(r"several months", text):
         return update + timedelta(days=config.SEVERAL_MONTHS_DAYS), "duration", True
     if re.search(r"few weeks|couple of weeks", text):
         return update + timedelta(days=config.FEW_WEEKS_DAYS), "duration", True
 
-    # 4. Phrases with no number, then the status itself.
+    # 4. Severity words with no date or length (a fracture, surgery, a tear): months, not weeks.
+    severe = _severity_category(text)
+    if severe:
+        return update + timedelta(days=_severity_days(text, severe)), severe, True
+
+    # 5. Phrases with no number, then minor-injury words, then the status itself.
     for category, pattern in (("week_to_week", r"week-to-week|week to week"),
                               ("indefinite", r"indefinite|no timetable|without a timetable|no (?:set |definitive )?timeline|"
                                              r"not yet been cleared|no updates? on a timetable"),
@@ -212,6 +262,8 @@ def parse_return_info(description: str, update: date | None, status: str) -> tup
                                               r"(?:game|contest)|is out for (?:\w+day|tonight)")):
         if re.search(pattern, text):
             return update + timedelta(days=config.INJURY_PRIOR_DAYS[category]), category, True
+    if status != "Day To Day" and re.search(_MINOR_WORDS, text):   # (a day-to-day entry already gets the short prior)
+        return update + timedelta(days=config.INJURY_PRIOR_DAYS["minor"]), "minor", True
     category = "day_to_day" if status == "Day To Day" else "unknown"
     return update + timedelta(days=config.INJURY_PRIOR_DAYS[category]), category, True
 

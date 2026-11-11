@@ -164,7 +164,13 @@ INJURY_TIMELINES_ENABLED = True
 
 # Assumed days out when the report gives no date and no duration (days from the report's update date).
 INJURY_PRIOR_DAYS = {"day_to_day": 4, "single_game": 2, "week_to_week": 21, "month": 45,
-                     "unknown": 35, "indefinite": 75, "long": 100}
+                     "unknown": 35, "indefinite": 75, "long": 100,
+                     # severity priors, used only when the text names a severe injury but no date or length
+                     "minor": 14,           # sprain, soreness, bruise, illness, day-to-day
+                     "surgery_long": 150,   # surgery, fracture, tear, dislocation: about 5 months
+                     "meniscus": 100,       # a meniscus tear with surgery: about 3 months
+                     "major_return": 200}   # ACL / Achilles / rupture said to return this season: about 6.5 months
+INJURY_ANCHOR_MAX_DAYS = 7        # a date in the text up to this many days after the update starts the clock
 INJURY_REEVAL_EXTRA_DAYS = 7      # "re-evaluated in two weeks" means back later than that, on average
 INJURY_AT_LEAST_STRETCH = 1.25    # "at least 4 weeks" is read as 4 x 1.25 weeks
 INJURY_OVERDUE_DAYS = 14          # a timed injury past its date but still listed: assume this many more days
@@ -190,7 +196,8 @@ HEALTH_MIN_PRIOR_GAMES = 20
 PRIOR_ASSUMED_HEALTH = 0.9        # share of a player the net-rating prior (last season's rating) is assumed to include
 HEALTH_SHORT_ABSENCE_DAYS = 10    # expected back within this many days: no adjustment (noise, not a health story)
 HEALTH_CREDIT_CEILING = 0.9       # a recovered player is as available as an average healthy one (= PRIOR_ASSUMED_HEALTH)
-HEALTH_UNCERTAIN_CREDIT = {"unknown": 0.9, "long": 0.9, "indefinite": 0.85}   # return date is a guess: discount the credit
+HEALTH_UNCERTAIN_CREDIT = {"unknown": 0.9, "long": 0.9, "indefinite": 0.85,
+                          "surgery_long": 0.85, "major_return": 0.8, "minor": 0.9}   # return date is a guess: discount the credit
 HEALTH_ADJ_MAX_DOWN = 0.5         # per-team cap in composite z units (0.5 z ~ 1.6 points of margin); was 0.8
 HEALTH_ADJ_MAX_UP = 0.2           # returns are less certain than losses, so the cap is smaller; was 0.4
 HEALTH_NOTE_MIN = 0.03            # smaller player adjustments are not mentioned in notes
