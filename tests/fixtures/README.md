@@ -13,6 +13,8 @@ the parser tests run offline and fast.
 | `schedule_playin_era_sample.html` | `schedule` | April 2026 (cached 2026-11 for the backtest): 2 regular-season games, 2 play-in games, 2 playoff games. There is no "Playoffs" row in this layout |
 | `schedule_separator_sample.html` | `schedule` | April 2005: 2 regular games, the "Playoffs" separator row, 2 playoff games (the layout up to the 2020 season) |
 | `schedule_current_sample.html` | `schedule` | November 2026: 2 finished games and 2 not yet played (used to test `parse_schedule`) |
+| `standings_sample.html` | `confs_standings_E`, `confs_standings_W` | The two conference standings tables from the season page (Nov 8, 2026 copy), all 30 teams |
+| `per_game_sample.html` | `per_game_stats` | The header plus the first 6 rows (top scorers) of the 2026-27 per-game page, fetched 2026-11-10 |
 | `polymarket_nba_champion_sample.json` | n/a | The Polymarket Gamma API response for `events?slug=nba-2027-champion` (fetched 2026-11-10), trimmed to the fields we read: 30 team markets plus the "Team A" to "Team E" and "Other" placeholders |
 
 Real pages change layout from time to time. If the site changes, refresh the fixtures from a new

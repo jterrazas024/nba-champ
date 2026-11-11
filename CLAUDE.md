@@ -38,6 +38,7 @@ The site reads only this file. The pipeline is the only thing that writes it. Do
 - Title probabilities across all 30 teams sum to 1.0 (tests must check this).
 - Includes `generated_at` (UTC ISO timestamp) so the site can show "Last updated".
 - File stays under 100 KB.
+- Optional `standings` and `leaders` fields feed the Standings tab. They never fail the build (left out with a WARNING), and the site hides the tab when they are missing.
 
 ## Model rules
 

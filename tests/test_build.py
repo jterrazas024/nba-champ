@@ -63,12 +63,12 @@ def test_it_asks_for_exactly_the_pages_it_needs_and_stops_reading_months_early(b
     assert sorted(client.paths) == sorted([
         "/leagues/NBA_2027.html", "/leagues/NBA_2026.html",
         "/leagues/NBA_2027_advanced.html", "/leagues/NBA_2026_advanced.html", "/leagues/NBA_2025_advanced.html",
-        "/friv/injuries.fcgi", "/leagues/NBA_2027_games-november.html", "/leagues/NBA_2027_games-october.html",
+        "/friv/injuries.fcgi", "/leagues/NBA_2027_per_game.html", "/leagues/NBA_2027_games-november.html", "/leagues/NBA_2027_games-october.html",
         # the remaining schedule for the simulation: December through April (November is shared)
         "/leagues/NBA_2027_games-december.html", "/leagues/NBA_2027_games-january.html",
         "/leagues/NBA_2027_games-february.html", "/leagues/NBA_2027_games-march.html",
         "/leagues/NBA_2027_games-april.html"])
-    assert client.requests_made == 13 <= config.MAX_REQUESTS
+    assert client.requests_made == 14 <= config.MAX_REQUESTS
 
 
 def test_dropped_inputs_are_null_and_weights_sum_to_one(built):

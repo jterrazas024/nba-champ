@@ -58,6 +58,8 @@ def validate_odds(odds: dict) -> list[str]:
     problems += _check_market(odds)
     problems += _check_playoff_mode(odds)
     problems += _check_health(odds)
+    problems += _check_standings(odds)
+    problems += _check_leaders(odds)
 
     if len(json.dumps(odds, indent=1).encode()) >= MAX_BYTES:
         problems.append("file would be 100 KB or larger")
@@ -226,4 +228,63 @@ def _check_playoff_mode(odds: dict) -> list[str]:
         problems.append("a champion is named but phase is not complete")
     if source == "simulation" and phase in (None, "regular_season"):
         problems.append("headline_source is simulation but phase is not a playoff phase")
+    return problems
+
+
+def _is_number(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _check_standings(odds: dict) -> list[str]:
+    """Checks for the optional `standings` field (SPEC.md section 7): east and west each list 15 distinct teams
+    of that conference with ranks 1 to 15 in order. Runs only when the field is present."""
+    standings = odds.get("standings")
+    if standings is None:
+        return []
+    if not isinstance(standings, dict):
+        return ["standings must be an object with east and west lists"]
+    conferences = {t.get("id"): t.get("conference") for t in odds["teams"]}
+    problems: list[str] = []
+    for key, name in (("east", "East"), ("west", "West")):
+        rows = standings.get(key)
+        if not isinstance(rows, list) or len(rows) != 15:
+            problems.append(f"standings.{key} must list 15 teams")
+            continue
+        if [r.get("rank") for r in rows] != list(range(1, 16)):
+            problems.append(f"standings.{key} ranks must run 1 to 15 in order")
+        if len({r.get("id") for r in rows}) != 15 or any(conferences.get(r.get("id")) != name for r in rows):
+            problems.append(f"standings.{key} must hold 15 distinct {name} teams")
+        for r in rows:
+            if not all(isinstance(r.get(k), int) and not isinstance(r.get(k), bool) and r[k] >= 0 for k in ("w", "l")):
+                problems.append(f"standings.{key} {r.get('id')}: w and l must be whole numbers")
+            elif not _is_number(r.get("pct")) or not 0 <= r["pct"] <= 1 or not _is_number(r.get("gb")) or r["gb"] < 0:
+                problems.append(f"standings.{key} {r.get('id')}: pct must be in [0, 1] and gb must not be negative")
+            for k in ("last10", "streak"):
+                if r.get(k) is not None and not isinstance(r[k], str):
+                    problems.append(f"standings.{key} {r.get('id')}: {k} must be text or null")
+    return problems
+
+
+def _check_leaders(odds: dict) -> list[str]:
+    """Checks for the optional `leaders` field (SPEC.md section 7): `min_games` and, for pts/ast/reb/stl/blk, a
+    non-empty list of at most 5 {player, team, value, g} sorted from highest value. Runs only when present."""
+    leaders = odds.get("leaders")
+    if leaders is None:
+        return []
+    if not isinstance(leaders, dict):
+        return ["leaders must be an object"]
+    problems: list[str] = []
+    if not isinstance(leaders.get("min_games"), int) or isinstance(leaders.get("min_games"), bool) or leaders["min_games"] < 1:
+        problems.append("leaders.min_games must be a positive integer")
+    ids = {t.get("id") for t in odds["teams"]}
+    for key in ("pts", "ast", "reb", "stl", "blk"):
+        rows = leaders.get(key)
+        if not isinstance(rows, list) or not 1 <= len(rows) <= 5:
+            problems.append(f"leaders.{key} must list 1 to 5 players")
+            continue
+        if not all(isinstance(r.get("player"), str) and r.get("team") in ids and _is_number(r.get("value"))
+                   and isinstance(r.get("g"), int) for r in rows):
+            problems.append(f"leaders.{key} entries need player, team (a team id), value and g")
+        elif [r["value"] for r in rows] != sorted((r["value"] for r in rows), reverse=True):
+            problems.append(f"leaders.{key} must be sorted from the highest value")
     return problems

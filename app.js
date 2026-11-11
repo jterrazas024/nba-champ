@@ -1,4 +1,4 @@
-// Redesigned odds page: reads data/odds.json and shows it as five swipeable screens.
+// Redesigned odds page: reads data/odds.json and shows it as six swipeable screens.
 // Plain script, no dependencies. Every piece of data goes in with textContent or
 // setAttribute, never innerHTML, so nothing in the JSON can be read as HTML.
 // Team marks are original monograms in the team colors, not official logos.
@@ -23,7 +23,7 @@ const TEAM_COLORS = {
 };
 const colorsOf = (team) => TEAM_COLORS[team.id] || ["#777777", "#BBBBBB"];
 
-const PAGES = ["home", "rankings", "team", "map", "model"];
+const PAGES = ["home", "rankings", "standings", "team", "map", "model"];
 const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------- Number formatting ----------
@@ -675,6 +675,129 @@ function buildRankList() {
   }
 }
 
+// ---------- Page: Standings and league leaders ----------
+// Optional data: odds.json may have `standings` (east/west lists) and `leaders` (top five per stat).
+// With neither (an older file, or the build left them out) the whole page is removed; with only one
+// of them, just that section is hidden.
+
+const LEADER_TITLES = [["pts", "Points"], ["reb", "Rebounds"], ["ast", "Assists"], ["stl", "Steals"], ["blk", "Blocks"]];
+const hasStandings = (d) => !!(d && d.standings && Array.isArray(d.standings.east) && Array.isArray(d.standings.west)
+  && d.standings.east.length > 0 && d.standings.west.length > 0);
+const hasLeaders = (d) => !!(d && d.leaders && LEADER_TITLES.some((t) => Array.isArray(d.leaders[t[0]]) && d.leaders[t[0]].length > 0));
+
+// "Good to know": how far through the season we are and when the numbers were built.
+function standingsFacts(data) {
+  const facts = [];
+  const avg = data.games_played_league_avg;
+  if (data.phase && data.phase !== "regular_season") {
+    facts.push("The regular season is over. These are the final standings.");
+  } else if (typeof avg === "number" && avg > 0) {
+    facts.push("Teams have played " + avg.toFixed(1) + " of 82 games on average (" + Math.min(100, Math.round((avg / 82) * 100)) + "% of the season).");
+  }
+  const when = new Date(data.generated_at);
+  if (!Number.isNaN(when.getTime())) {
+    facts.push("Data as of " + when.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) + ".");
+  }
+  return facts;
+}
+
+function standingsTable(title, rows) {
+  const box = el("section", "st-conf");
+  box.setAttribute("aria-label", title + " standings");
+  box.appendChild(el("h3", "st-head", title));
+  const head = el("div", "st-row st-cols");
+  ["", "", "Team", "W-L", "Pct", "GB", "L10", "Strk"].forEach((label, i) => {
+    head.appendChild(el("span", i === 2 ? "st-team" : "st-n", label));
+  });
+  head.setAttribute("aria-hidden", "true");
+  box.appendChild(head);
+  const list = el("div", "st-list");
+  rows.forEach((r) => {
+    const team = teamById(r.id);
+    const btn = el("button", "st-row" + (r.rank <= 6 ? " seed" : r.rank <= 10 ? " pi" : ""));
+    btn.type = "button";
+    btn.dataset.team = r.id;
+    btn.setAttribute("aria-label", (team ? team.name : r.id) + ", seed " + r.rank + ", " + r.w + " and " + r.l);
+    btn.appendChild(el("span", "st-rk", String(r.rank)));
+    if (team) btn.appendChild(crest(team, 22)); else btn.appendChild(el("span", "st-nocrest"));
+    const name = el("span", "st-team");
+    name.appendChild(el("span", "st-full", team ? team.name : r.id));
+    name.appendChild(el("span", "st-abbr", r.id));
+    btn.appendChild(name);
+    btn.appendChild(el("span", "st-n st-wl", r.w + "-" + r.l));
+    btn.appendChild(el("span", "st-n", r.pct.toFixed(3).replace(/^0/, "")));
+    btn.appendChild(el("span", "st-n", r.gb === 0 ? "–" : r.gb.toFixed(1)));
+    btn.appendChild(el("span", "st-n", typeof r.last10 === "string" ? r.last10 : "–"));
+    btn.appendChild(el("span", "st-n st-streak" + (typeof r.streak === "string" ? (r.streak[0] === "W" ? " w" : " l") : ""),
+      typeof r.streak === "string" ? r.streak : "–"));
+    btn.addEventListener("click", () => pick(r.id));
+    list.appendChild(btn);
+  });
+  box.appendChild(list);
+  return box;
+}
+
+function leadersBlock(title, rows) {
+  const box = el("section", "ld");
+  box.setAttribute("aria-label", title + " per game leaders");
+  box.appendChild(el("h3", "st-head", title + " per game"));
+  rows.forEach((p, i) => {
+    const team = teamById(p.team);
+    const line = el("div", "ld-row");
+    line.appendChild(el("span", "st-rk", String(i + 1)));
+    if (team) line.appendChild(crest(team, 20)); else line.appendChild(el("span", "st-nocrest"));
+    const who = el("span", "ld-who");
+    const nm = el("span", "ld-name", p.player);
+    nm.title = p.player + " (" + p.team + ", " + p.g + " games)";
+    who.appendChild(nm);
+    who.appendChild(el("span", "ld-team", p.team));
+    line.appendChild(who);
+    line.appendChild(el("span", "ld-val", p.value.toFixed(1)));
+    box.appendChild(line);
+  });
+  return box;
+}
+
+function buildStandings() {
+  const data = state.data;
+  const confs = $("st-confs");
+  const leaders = $("st-leaders");
+  confs.textContent = "";
+  leaders.textContent = "";
+  confs.hidden = !hasStandings(data);
+  leaders.hidden = !hasLeaders(data);
+  if (hasStandings(data)) {
+    confs.appendChild(standingsTable("Eastern Conference", data.standings.east));
+    confs.appendChild(standingsTable("Western Conference", data.standings.west));
+    $("st-legend").hidden = false;
+  } else {
+    $("st-legend").hidden = true;
+  }
+  if (hasLeaders(data)) {
+    const grid = el("div", "ld-grid");
+    LEADER_TITLES.forEach((t) => {
+      const rows = data.leaders[t[0]];
+      if (Array.isArray(rows) && rows.length) grid.appendChild(leadersBlock(t[1], rows));
+    });
+    leaders.appendChild(grid);
+  }
+  const facts = standingsFacts(data);
+  if (hasLeaders(data) && Number.isInteger(data.leaders.min_games)) {
+    facts.push("Leaders need at least " + data.leaders.min_games + " games played (70% of a typical team's games).");
+  }
+  const fine = $("st-fine");
+  fine.textContent = facts.join(" ");
+  fine.hidden = facts.length === 0;
+}
+
+// Drop the page (and its nav entries) when the file has nothing for it.
+function removeStandingsIfEmpty() {
+  if (hasStandings(state.data) || hasLeaders(state.data)) return;
+  const node = $("page-standings");
+  if (node) node.remove();
+  PAGES.splice(PAGES.indexOf("standings"), 1);
+}
+
 // ---------- Page 3: Team ----------
 
 const inputValue = (key) => (team) => {
@@ -1111,6 +1234,7 @@ async function init() {
   state.teams = data.teams.slice().sort((a, b) => b.title_prob - a.title_prob || a.rank - b.rank);
   renderHeader();
 
+  removeStandingsIfEmpty();
   buildDots();
   setupPager();
   buildBall();
@@ -1119,6 +1243,7 @@ async function init() {
   watchGraphSize();
   buildBubbles();
   buildRankList();
+  if ($("page-standings")) buildStandings();
   buildMap();
   buildModel();
   setupBig($("home-big"));

@@ -26,7 +26,36 @@ def ratings_page(games: int) -> str:
         rows.append([t.name, str(wins), str(games - wins), f"{s / 2:.2f}", "0.00", f"{s / 2:.2f}",
                      f"{113 + s / 3:.1f}", f"{113 - s / 3:.1f}", f"{2 * s / 3:.1f}"])
     rows.append(["League Average", "", "", "0.00", "0.00", "0.00", "113.0", "113.0", ""])
-    return table("advanced-team", ["Team", "W", "L", "MOV", "SOS", "SRS", "ORtg", "DRtg", "NRtg"], rows)
+    return table("advanced-team", ["Team", "W", "L", "MOV", "SOS", "SRS", "ORtg", "DRtg", "NRtg"], rows) + standings_tables(games)
+
+
+def standings_tables(games: int) -> str:
+    """The two conference standings tables (same records as the ratings table), strongest team first."""
+    out = []
+    for conference, letter in (("East", "E"), ("West", "W")):
+        teams = sorted((t for t in TEAMS if t.conference == conference), key=lambda t: -STRENGTH[t.id])
+        rows = []
+        for i, t in enumerate(teams):
+            wins = max(0, min(games, round(games / 2 + STRENGTH[t.id] / 6)))
+            top = max(0, min(games, round(games / 2 + STRENGTH[teams[0].id] / 6)))
+            gap = ((top - wins) + (top - wins)) / 2   # games back: (wins behind + extra losses) / 2
+            rows.append([f"{t.name}&nbsp;<span class='seed'>({i + 1})&nbsp;</span>", str(wins), str(games - wins),
+                         f"{wins / games:.3f}" if games else ".000", "&mdash;" if i == 0 else f"{gap:.1f}"])
+        out.append(table(f"confs_standings_{letter}", [f"{conference}ern Conference", "W", "L", "W/L%", "GB"], rows))
+    return "".join(out)
+
+
+def per_game_page(games: int) -> str:
+    """A per-game stats page: 12 players per team; player j of team i scores more the higher i and the lower j."""
+    rows = []
+    for i, t in enumerate(TEAMS):
+        for j in range(PLAYERS_PER_TEAM):
+            pid = player_id(t, j)
+            value = i + 10 - j * 0.5
+            rows.append([f'<a href="/players/{pid[0]}/{pid}.html">{t.id} Player {j}</a>', t.br_code, str(games - (j % 3)),
+                         f"{value:.1f}", f"{value / 4:.1f}", f"{value / 3:.1f}", f"{value / 10:.1f}", f"{value / 12:.1f}"])
+    rows.append(["League Average", "", "", "", "", "", "", ""])
+    return table("per_game_stats", ["Player", "Team", "G", "PTS", "AST", "TRB", "STL", "BLK"], rows)
 
 
 def player_id(team, j: int) -> str:
@@ -118,6 +147,7 @@ def league_pages(games: int = 24, skip_form_team: str | None = None, players_per
         f"/leagues/NBA_{end_year - 1}_advanced.html": players_page(82, False),
         f"/leagues/NBA_{end_year - 2}_advanced.html": players_page(82, False),
         "/friv/injuries.fcgi": injuries_page(),
+        f"/leagues/NBA_{end_year}_per_game.html": per_game_page(games),
         f"/leagues/NBA_{end_year}_games-october.html": games_page(date(2026, 10, 20), min(games, 12), skip_form_team, future.pop("october", None)),
         f"/leagues/NBA_{end_year}_games-november.html": games_page(date(2026, 11, 1), max(0, games - 12) or 1, skip_form_team, future.pop("november", None)),
     }

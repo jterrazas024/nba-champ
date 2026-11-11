@@ -259,3 +259,62 @@ def parse_games(html: str, team_names: dict = TEAM_BY_NAME) -> pd.DataFrame:
     done = games[games["is_played"]].dropna(subset=["away_id", "home_id"]).copy()
     done[["away_pts", "home_pts"]] = done[["away_pts", "home_pts"]].astype(int)
     return done[["date", "away_id", "away_pts", "home_id", "home_pts", "notes"]].reset_index(drop=True)
+
+
+def parse_standings(html: str, team_names: dict = TEAM_BY_NAME) -> pd.DataFrame:
+    """Conference standings from the season page's `confs_standings_E` and `confs_standings_W` tables.
+
+    Returns one row per team in page order (best record first), so `rank` 1 to 15 is the conference
+    order: team_id, conference ("East"/"West"), rank, w, l, pct, gb (games back; 0.0 for the leader).
+    Raises ParseError if a table is missing or has an unknown team name.
+    """
+    frames = []
+    for conference, table_id, header in (("East", "confs_standings_E", "Eastern Conference"),
+                                          ("West", "confs_standings_W", "Western Conference")):
+        text, _ = _read_table(html, table_id, {header, "W", "L", "W/L%", "GB"})
+        # The team cell reads like "Philadelphia 76ers (1)": the seed in brackets is dropped.
+        names = text[header].astype("string").str.replace(r"\s*\(\d+\)\s*$", "", regex=True).str.replace("\xa0", " ").str.strip()
+        names = names.str.rstrip("*").str.strip()
+        keep = names.notna() & (names != header)
+        unknown = sorted(set(names[keep]) - set(team_names))
+        if unknown:
+            raise ParseError(f"standings page has team names we do not know: {unknown}")
+        rows = text[keep]
+        frame = pd.DataFrame({
+            "team_id": names[keep].map(lambda n: team_names[n].id),
+            "conference": conference,
+            "w": _numbers(rows["W"]), "l": _numbers(rows["L"]),
+            "pct": _numbers(rows["W/L%"]),
+            "gb": _numbers(rows["GB"]).fillna(0.0),    # the leader's GB is a dash
+        }).reset_index(drop=True)
+        frame.insert(2, "rank", range(1, len(frame) + 1))
+        frames.append(frame)
+    return pd.concat(frames, ignore_index=True)
+
+
+def parse_per_game(html: str, team_codes: dict = TEAM_BY_BR_CODE) -> pd.DataFrame:
+    """Per-game player stats from the season's `per_game_stats` table.
+
+    Returns one row per player: player_id, player, team_id, g, pts, ast, trb, stl, blk. A player
+    traded mid-season has one total row ("2TM"/"3TM") and one row per team; we keep the total row's
+    numbers and name the team he played for last (the final team row). Repeated header rows and the
+    "League Average" row are dropped; a team code we do not know leaves team_id None.
+    """
+    text, links = _read_table(html, "per_game_stats", {"Player", "Team", "G", "PTS", "AST", "TRB", "STL", "BLK"})
+    keep = text["Player"].notna() & ~text["Player"].isin(["League Average", "Player"])
+    text, links = text[keep], links[keep]
+    ids = links["Player"].map(_player_id)
+    if ids.isna().any():
+        raise ParseError(f"no player id found (page layout changed?) for: {text.loc[ids.isna(), 'Player'].tolist()[:5]}")
+    team = text["Team"].astype("string")
+    is_total = team.str.fullmatch(r"\dTM").fillna(False).astype(bool)
+    last_team = team.where(~is_total).groupby(ids).transform("last")   # the last real team row per player
+    team_id = pd.Series(
+        [team_codes[c].id if c in team_codes else None for c in team.where(~is_total, last_team)], index=text.index)
+    out = pd.DataFrame({
+        "player_id": ids, "player": text["Player"], "team_id": team_id,
+        "g": _numbers(text["G"]), "pts": _numbers(text["PTS"]), "ast": _numbers(text["AST"]),
+        "trb": _numbers(text["TRB"]), "stl": _numbers(text["STL"]), "blk": _numbers(text["BLK"]),
+    })
+    # one row per player: the total row if he has one (it comes first), otherwise his only row
+    return out.drop_duplicates("player_id", keep="first").reset_index(drop=True)

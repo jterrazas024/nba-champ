@@ -312,6 +312,44 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
 .row.out { opacity: 0.45; }
 .row.static { cursor: default; }
 
+/* ---------- Standings page ---------- */
+
+#page-standings > * { flex: none; }
+#page-standings { padding-bottom: 36px; }
+.st-confs, .ld-grid { display: flex; flex-direction: column; gap: 18px; padding-right: 14px; }
+.st-leaders { margin-top: 22px; }
+.st-confs[hidden], .st-leaders[hidden] { display: none; }
+.st-head { margin: 0 0 6px; font-family: var(--mono); font-size: 11.5px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.07em; color: color-mix(in srgb, var(--ink) 62%, var(--bg)); }
+.st-list { display: flex; flex-direction: column; gap: 1px; }
+.st-row {
+  display: grid; align-items: center; column-gap: 7px; width: 100%; text-align: left;
+  grid-template-columns: 2.2ch 22px minmax(0, 1fr) 5.4ch 4.2ch 3.4ch 4.4ch 3.2ch;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.02em; text-transform: uppercase;
+  padding: 4px 10px; min-height: 29px; border-radius: 99px;
+  transition: background 0.3s var(--ease), color 0.3s var(--ease);
+}
+.st-row.pi { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.st-row.seed .st-rk { font-weight: 700; opacity: 1; }
+.st-row.sel { background: var(--pill-bg); color: var(--pill-fg); }
+.st-row.sel .crest { color: var(--pill-fg); }
+.st-cols { min-height: 18px; padding-top: 0; padding-bottom: 0; font-size: 10px; color: color-mix(in srgb, var(--ink) 55%, var(--bg)); }
+.st-rk { opacity: 0.55; font-variant-numeric: tabular-nums; }
+.st-nocrest { width: 22px; height: 22px; }
+.st-team { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--sans); font-weight: 700; font-size: 14px; letter-spacing: -0.01em; text-transform: none; }
+.st-cols .st-team { font-family: var(--mono); font-weight: 400; font-size: 10px; letter-spacing: 0.02em; text-transform: uppercase; }
+.st-full { display: none; }
+.st-n { text-align: right; font-variant-numeric: tabular-nums; }
+.st-wl { font-weight: 700; }
+.st-streak.w { font-weight: 700; }
+.st-streak.l { opacity: 0.7; }
+
+.ld-row { display: grid; align-items: center; column-gap: 8px; grid-template-columns: 2.2ch 20px minmax(0, 1fr) auto; padding: 5px 10px; min-height: 31px; border-bottom: 1px dotted color-mix(in srgb, var(--ink) 30%, transparent); }
+.ld-who { display: flex; align-items: baseline; gap: 8px; min-width: 0; overflow: hidden; }
+.ld-name { font-family: var(--sans); font-weight: 700; font-size: 14px; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ld-team { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; opacity: 0.6; }
+.ld-val { font-family: var(--display); font-size: 22px; line-height: 1; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+.ld .st-head { padding-left: 10px; }
+
 /* ---------- Rankings bubbles ---------- */
 
 .art-bubbles { flex: none; height: 25cqh; margin-top: 2px; }
@@ -479,7 +517,30 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
   #rank-list::-webkit-scrollbar { display: block; width: 6px; }
   #rank-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 50%, transparent); border-radius: 3px; }
 
-  /* 3. Team: identity and number on the left, measures and charts on the right */
+  /* 3. Standings: the two conferences side by side, league leaders in a row of five underneath */
+  #page-standings { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding-bottom: 40px; }
+  #page-standings > * { grid-column: 1 / -1; }
+  #page-standings .page-title { margin-bottom: 2px; }
+  #page-standings .page-sub { margin-bottom: 14px; max-width: none; }
+  .st-confs { flex-direction: row; gap: clamp(32px, 5vw, 80px); padding: 0; align-items: flex-start; }
+  .st-conf { flex: 1 1 0; min-width: 0; }
+  .st-row { font-size: 13px; min-height: 31px; padding: 4px 16px; column-gap: 12px; grid-template-columns: 2.4ch 24px minmax(0, 1fr) 6ch 4.6ch 3.6ch 4.8ch 3.4ch; }
+  .st-cols { font-size: 10.5px; }
+  .st-cols .st-team { font-size: 10.5px; }
+  .st-full { display: inline; }
+  .st-abbr { display: none; }
+  .st-row:hover:not(.sel) { background: var(--band); }
+  .st-leaders { margin-top: 30px; }
+  .ld-grid { flex-direction: row; gap: clamp(18px, 2.4vw, 36px); padding: 0; }
+  .ld { flex: 1 1 0; min-width: 0; }
+  .ld-row { grid-template-columns: 2ch minmax(0, 1fr) auto; padding: 5px 4px; }
+  .ld-row .crest, .ld-row .st-nocrest { display: none; }
+  .ld-who { flex-direction: column; align-items: stretch; gap: 0; }
+  .ld-name { font-size: 13.5px; }
+  .ld .st-head { padding-left: 4px; }
+  #page-standings .fine { margin-top: 20px; }
+
+  /* 4. Team: identity and number on the left, measures and charts on the right */
   #page-team { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-content: safe center; }
   #page-team .row { min-height: 42px; font-size: 14px; }
   #page-team > .team-head, #page-team > .page-title, #page-team > .page-sub, #page-team > .notes { grid-column: 1; }
@@ -493,7 +554,7 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
   .trend { grid-column: 2; grid-row: 5; padding: 14px 0 0; }
   .trend svg { height: 100px; }
 
-  /* 4. Map: text and the selected team on the left, a large plot on the right */
+  /* 5. Map: text and the selected team on the left, a large plot on the right */
   #page-map { grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); grid-template-rows: auto auto 1fr; padding-bottom: 20px; }
   #page-map .page-title, #page-map .page-sub, #map-readout { grid-column: 1; }
   #map-readout { grid-row: 3; align-self: start; }
@@ -501,7 +562,7 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
   .map svg { width: 100%; height: 100%; }
   .map text { font-size: 10px; }
 
-  /* 5. Model: art and intro on the left, the weights on the right */
+  /* 6. Model: art and intro on the left, the weights on the right */
   #page-model { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-content: center; }
   #model-rows .row { min-height: 46px; font-size: 14.5px; }
   #page-model > :not(#model-rows) { grid-column: 1; }

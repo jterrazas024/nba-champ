@@ -16,6 +16,7 @@ Run:  python pipeline/build_odds.py [--out PATH] [--today YYYY-MM-DD]
 """
 import argparse
 import json
+import math
 import os
 import sys
 from dataclasses import dataclass
@@ -31,7 +32,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pipeline import config, features, health, market, model, playoffs, sim, sim_inputs  # noqa: E402
 from pipeline.fetch import BRClient, Blocked, FetchError  # noqa: E402
-from pipeline.parse import ParseError, parse_games, parse_injuries, parse_players, parse_ratings  # noqa: E402
+from pipeline.parse import (ParseError, parse_games, parse_injuries, parse_per_game, parse_players,  # noqa: E402
+                            parse_ratings, parse_standings)
 from pipeline.seed import daily_seed  # noqa: E402
 from pipeline.validate import check_sim, validate_odds  # noqa: E402
 
@@ -44,6 +46,9 @@ HISTORY_DAYS = 30               # how many daily values each team keeps in `hist
 CHANGE_WINDOW_DAYS = 3          # prob_change_1d needs an earlier history entry at most this many days back
 EARLY_SEASON_NOTE_GAMES = 10    # below this many games, add a note that net rating leans on last season
 MAX_NOTES = 4
+LEADER_COUNT = 5               # players listed per leaderboard (SPEC.md section 7, `leaders`)
+LEADER_MIN_GAME_SHARE = 0.7    # a leader needs this share of the games a team has played (the NBA uses 70%)
+LEADER_STATS = {"pts": "pts", "ast": "ast", "reb": "trb", "stl": "stl", "blk": "blk"}   # odds.json key -> column
 SEASON_MONTHS = ["october", "november", "december", "january", "february", "march", "april", "may", "june"]
 MONTH_INDEX = {10: 0, 11: 1, 12: 2, 1: 3, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8}
 PLAYOFF_MONTH_INDEX = 7        # SEASON_MONTHS[7] is may: from here on a month page may not exist yet
@@ -226,6 +231,7 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
         "history_dates": history_dates,
         "teams": teams,
     }
+    odds.update(_extras(client, ratings, games, games_played, playoff_mode, end_year))
     simulated = False
     if playoff_mode:
         odds["sim"] = playoff_sim[1]
@@ -235,6 +241,84 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
                                     final if config.SIM_USES_PENALTIES else composite)
     note = "with" if simulated else "without"
     return BuildResult(odds, f"Built odds for {len(teams)} teams ({client.requests_made} requests, {note} simulation).")
+
+
+# ---------- standings and leaders (SPEC.md section 7, optional fields for the Standings page) ----------
+
+def _record_and_streak(results: list[bool]) -> tuple[str | None, str | None]:
+    """Return (last-10 record like "7-3", streak like "W3") from a team's results, oldest first (True = win)."""
+    if not results:
+        return None, None
+    last = results[-10:]
+    streak = 1
+    while streak < len(results) and results[-1 - streak] == results[-1]:
+        streak += 1
+    return f"{sum(last)}-{len(last) - sum(last)}", f"{'W' if results[-1] else 'L'}{streak}"
+
+
+def team_results(games: pd.DataFrame) -> dict[str, list[bool]]:
+    """Return each team's game results (True = win), oldest first, from the finished games (date order)."""
+    results: dict[str, list[bool]] = {}
+    for g in games.sort_values("date", kind="stable").itertuples():
+        home_won = g.home_pts > g.away_pts
+        results.setdefault(g.home_id, []).append(bool(home_won))
+        results.setdefault(g.away_id, []).append(not home_won)
+    return results
+
+
+def build_standings(ratings_html: str, games: pd.DataFrame | None) -> dict:
+    """Return {"east": [...], "west": [...]} from the season page. Each entry is
+    {id, rank, w, l, pct, gb, last10, streak}; last10 and streak are None when `games` is None (playoff mode)
+    or the team has no games in it."""
+    table = parse_standings(ratings_html)
+    results = team_results(games) if games is not None else {}
+    out: dict[str, list[dict]] = {"east": [], "west": []}
+    for row in table.itertuples():
+        last10, streak = _record_and_streak(results.get(row.team_id, []))
+        out[row.conference.lower()].append({
+            "id": row.team_id, "rank": int(row.rank), "w": int(row.w), "l": int(row.l),
+            "pct": round(float(row.pct), 3), "gb": round(float(row.gb), 1), "last10": last10, "streak": streak})
+    if any(len(v) != 15 for v in out.values()):
+        raise ParseError("standings do not list 15 teams per conference")
+    return out
+
+
+def build_leaders(per_game_html: str, games_played: pd.Series) -> dict:
+    """Return {"min_games": n, "pts": [...], "ast": ..., "reb": ..., "stl": ..., "blk": ...}: the top LEADER_COUNT
+    players per stat (each {player, team, value, g}) among those with at least 70% of the games a typical team has played."""
+    players = parse_per_game(per_game_html)
+    min_games = max(1, math.ceil(LEADER_MIN_GAME_SHARE * float(games_played.median())))
+    eligible = players[(players["g"] >= min_games) & players["team_id"].notna()]
+    if eligible.empty:
+        raise ParseError("no players qualify for the leaderboards")
+    out: dict = {"min_games": min_games}
+    for key, column in LEADER_STATS.items():
+        top = eligible.dropna(subset=[column]).sort_values([column, "g", "player"], ascending=[False, False, True]).head(LEADER_COUNT)
+        out[key] = [{"player": r.player, "team": r.team_id, "value": round(float(getattr(r, column)), 1), "g": int(r.g)}
+                    for r in top.itertuples()]
+    return out
+
+
+def _extras(client: BRClient, ratings: pd.DataFrame, games: pd.DataFrame, games_played: pd.Series,
+            playoff_mode: bool, end_year: int) -> dict:
+    """Return the optional `standings` and `leaders` fields. Each is left out (with a WARNING on stderr) if it
+    cannot be built, so these never fail the build. A block by the site is the one exception: it stops the run."""
+    extras: dict = {}
+    try:
+        extras["standings"] = build_standings(client.get_html(f"/leagues/NBA_{end_year}.html", f"ratings_{end_year}"),
+                                              None if playoff_mode else games)
+    except Blocked:
+        raise
+    except (FetchError, ParseError, ValueError, KeyError, OSError) as err:   # OSError: an offline cache without the page
+        print(f"WARNING standings left out: {err}", file=sys.stderr)
+    try:
+        extras["leaders"] = build_leaders(client.get_html(f"/leagues/NBA_{end_year}_per_game.html", f"per_game_{end_year}"),
+                                          games_played)
+    except Blocked:
+        raise
+    except (FetchError, ParseError, ValueError, KeyError, OSError) as err:   # OSError: an offline cache without the page
+        print(f"WARNING leaders left out: {err}", file=sys.stderr)
+    return extras
 
 
 # ---------- market consensus (SPEC.md section 6.7) ----------

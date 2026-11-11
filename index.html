@@ -126,7 +126,16 @@
           <div class="rows rows-scroll" id="rank-list" role="group" aria-label="All teams by title odds"></div>
         </section>
 
-        <!-- 3. Team: one team's odds and model inputs -->
+        <!-- 3. Standings: conference tables, league leaders, and a few facts (hidden when odds.json has no such data) -->
+        <section class="page" id="page-standings" data-title="Standings" aria-label="Standings">
+          <h2 class="page-title">Standings</h2>
+          <p class="page-sub" id="st-legend">Bold rank: top six seeds. Shaded: play-in, seeds 7 to 10. Select a team to follow it across the site.</p>
+          <div class="st-confs" id="st-confs"></div>
+          <div class="st-leaders" id="st-leaders"></div>
+          <p class="fine" id="st-fine"></p>
+        </section>
+
+        <!-- 4. Team: one team's odds and model inputs -->
         <section class="page" id="page-team" data-title="Team" aria-label="Team">
           <div class="team-head">
             <div class="art art-crest" id="team-crest"></div>
@@ -140,7 +149,7 @@
           <div class="trend" id="trend"></div>
         </section>
 
-        <!-- 4. Map: net rating against star power -->
+        <!-- 5. Map: net rating against star power -->
         <section class="page" id="page-map" data-title="Map" aria-label="Contenders map">
           <h2 class="page-title">Contenders</h2>
           <p class="page-sub">Net rating against star power. Dot size is title odds. Upper right is strong on both.</p>
@@ -149,7 +158,7 @@
           <table class="sr-only" id="map-table"></table>
         </section>
 
-        <!-- 5. Model: how the number is made -->
+        <!-- 6. Model: how the number is made -->
         <section class="page" id="page-model" data-title="Model" aria-label="The model">
           <div class="art art-slabs" id="slabs"></div>
           <h2 class="page-title">The model</h2>
