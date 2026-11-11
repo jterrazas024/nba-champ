@@ -541,3 +541,12 @@ def test_a_schedule_a_few_games_short_is_filled_and_the_simulation_still_runs(mo
     monkeypatch.setattr(build_odds.sim_inputs, "fetch_remaining_schedule", lambda *a, **k: real(*a, **k).iloc[:-30])  # 2 days short
     odds = _odds_for(TODAY)
     assert "sim" in odds and validate_odds(odds) == [] and not _warns(capsys)
+
+
+def test_each_team_publishes_its_stars(built):
+    teams = built[1].odds["teams"]
+    assert all(1 <= len(t["stars"]) <= 2 for t in teams)
+    star = teams[0]["stars"][0]
+    assert isinstance(star["name"], str) and isinstance(star["bpm"], float) and star["mpg"] > 0
+    hurt = [s for t in teams for s in t["stars"] if "status" in s]
+    assert all(s["status"] in ("Out", "Out For Season", "Day To Day") for s in hurt)

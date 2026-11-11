@@ -206,6 +206,9 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
         }
         if team_health:
             entry.update(_health_fields(team_health[tid]))
+        star_list = _star_fields(stars[tid], roster, injuries)
+        if star_list:
+            entry["stars"] = star_list
         if market_series is not None:
             entry["model_prob"] = float(model_probs[tid])
             entry["market_prob"] = round(float(market_series[tid]), 6)
@@ -232,6 +235,7 @@ def build(client: BRClient, today: date, previous: dict | None, with_sim: bool =
         "teams": teams,
     }
     odds.update(_extras(client, ratings, games, games_played, playoff_mode, end_year))
+    _add_star_points(odds, client, end_year)
     simulated = False
     if playoff_mode:
         odds["sim"] = playoff_sim[1]
@@ -521,6 +525,47 @@ def _health_fields(team: health.TeamHealth) -> dict:
                 "playoff_credit": p.credit, "adjustment": round(p.adjustment, 3)}
                for p in team.players if abs(p.adjustment) >= config.HEALTH_NOTE_MIN][:config.HEALTH_MAX_PLAYERS_PUBLISHED]
     return {"health_adjustment": round(team.adjustment, 3), "injuries": players}
+
+
+def _star_fields(result: features.StarResult, roster: pd.DataFrame, injuries: pd.DataFrame) -> list[dict]:
+    """Return the optional per-team `stars` list (SPEC.md section 7): up to two of {name, bpm, mpg} plus, for a star
+    on the injury report, `status` and `expected_return` (YYYY-MM-DD or null). No new data is fetched."""
+    by_player = roster.set_index("player_id")
+    latest = {} if injuries.empty else injuries.sort_values("update").groupby("player_id", sort=False).tail(1).set_index("player_id")
+    out = []
+    for star in result.stars:
+        entry: dict = {"name": star.name, "bpm": round(float(star.bpm), 1)}
+        if star.player_id in by_player.index:
+            row = by_player.loc[star.player_id]
+            if row["g"] > 0 and pd.notna(row["mp"]):
+                entry["mpg"] = round(float(row["mp"] / row["g"]), 1)
+        if star.player_id in latest.index:
+            hurt = latest.loc[star.player_id]
+            if hurt["status"] in ("Out", "Out For Season", "Day To Day"):
+                entry["status"] = str(hurt["status"])
+                back = hurt.get("expected_return")
+                entry["expected_return"] = None if back is None or pd.isna(back) else back.isoformat()
+        out.append(entry)
+    return out
+
+
+def _add_star_points(odds: dict, client: BRClient, end_year: int) -> None:
+    """Add `ppg` to each team's stars from the (cached) per-game page. Optional: left out with a WARNING on failure."""
+    if not any(t.get("stars") for t in odds["teams"]):
+        return
+    try:
+        per_game = parse_per_game(client.get_html(f"/leagues/NBA_{end_year}_per_game.html", f"per_game_{end_year}"))
+    except Blocked:
+        raise
+    except (FetchError, ParseError, ValueError, KeyError, OSError) as err:
+        print(f"WARNING star points per game left out: {err}", file=sys.stderr)
+        return
+    points = {(r.player, r.team_id): float(r.pts) for r in per_game.itertuples() if pd.notna(r.pts)}
+    for team in odds["teams"]:
+        for star in team.get("stars", []):
+            ppg = points.get((star["name"], team["id"]))
+            if ppg is not None:
+                star["ppg"] = round(ppg, 1)
 
 
 def _notes(games: int, penalty_notes: list[str], star: features.StarResult,

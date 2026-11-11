@@ -800,6 +800,75 @@ function removeStandingsIfEmpty() {
 
 // ---------- Page 3: Team ----------
 
+// The one place that draws a player portrait. Today: an original head-and-shoulders silhouette in the team
+// color with the player's initials (no photos; headshots are copyrighted). To use real photos later, return an
+// <img> here instead and nothing else needs to change.
+function playerAvatar(star, team, size) {
+  const color = colorsOf(team)[0];
+  const ink = luminance(color) > 0.45 ? "#111" : "#fff";
+  const initials = String(star.name || "?").replace(/[^A-Za-z .'-]/g, "").split(/[\s.]+/).filter(Boolean)
+    .filter((w) => !/^(jr|sr|ii|iii|iv)$/i.test(w)).map((w) => w[0].toUpperCase());
+  const text = (initials.length > 1 ? initials[0] + initials[initials.length - 1] : initials[0] || "?");
+  const svg = svgEl("svg", { viewBox: "0 0 56 56", width: size, height: size, class: "avatar", "aria-hidden": "true", focusable: "false" });
+  const id = "av-" + Math.random().toString(36).slice(2, 8);
+  const clip = svgEl("clipPath", { id: id }, svgEl("defs", {}, svg));
+  svgEl("circle", { cx: 28, cy: 28, r: 27 }, clip);
+  svgEl("circle", { cx: 28, cy: 28, r: 27, class: "av-bg" }, svg);
+  const g = svgEl("g", { "clip-path": "url(#" + id + ")" }, svg);
+  svgEl("path", { d: "M3 58c0-13 9-20 17-22l8 5 8-5c8 2 17 9 17 22z", fill: color }, g);        // shoulders
+  svgEl("rect", { x: 23.5, y: 28, width: 9, height: 10, rx: 3, fill: color }, g);                  // neck
+  svgEl("ellipse", { cx: 28, cy: 20, rx: 8.6, ry: 10, fill: color }, g);                           // head
+  svgEl("path", { d: "M3 58c0-13 9-20 17-22l8 5 8-5c8 2 17 9 17 22z", fill: "#000", opacity: 0.18 }, g);
+  svgEl("ellipse", { cx: 28, cy: 20, rx: 8.6, ry: 10, fill: "none", stroke: "#000", "stroke-opacity": 0.3, "stroke-width": 0.8 }, g);
+  const t = svgEl("text", { x: 28, y: 52, "text-anchor": "middle", class: "av-text", style: "fill:" + ink }, g);
+  t.textContent = text;
+  svgEl("circle", { cx: 28, cy: 28, r: 27, fill: "none", class: "av-ring" }, svg);
+  return svg;
+}
+
+function returnTag(star) {
+  if (!star.status) return null;
+  if (star.status === "Out For Season") return "Out for season";
+  const d = star.expected_return ? new Date(star.expected_return + "T12:00:00") : null;
+  const when = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : null;
+  if (star.status === "Day To Day") return "Day to day";
+  return when ? "Out · returns ~" + when : "Out";
+}
+
+function renderStars(team) {
+  const box = $("team-stars");
+  box.textContent = "";
+  const stars = Array.isArray(team.stars) ? team.stars.filter((s) => s && s.name).slice(0, 2) : [];
+  box.hidden = !stars.length;
+  stars.forEach((star) => {
+    const card = el("div", "star" + (star.status ? " hurt" : ""));
+    card.appendChild(playerAvatar(star, team, 48));
+    const body = el("div", "star-body");
+    body.appendChild(el("div", "star-name", star.name));
+    const stats = [];
+    if (typeof star.ppg === "number") stats.push(star.ppg.toFixed(1) + " PPG");
+    if (typeof star.mpg === "number") stats.push(star.mpg.toFixed(0) + " MPG");
+    if (typeof star.bpm === "number") stats.push((star.bpm > 0 ? "+" : "") + star.bpm.toFixed(1) + " BPM");
+    body.appendChild(el("div", "star-stats", stats.join(" · ")));
+    const tag = returnTag(star);
+    if (tag) body.appendChild(el("span", "star-tag", tag));
+    card.appendChild(body);
+    box.appendChild(card);
+  });
+}
+
+// A native <select> of all teams (by title odds); it drives the same select() as every other picker.
+function buildTeamSelect() {
+  const sel = $("team-select");
+  sel.textContent = "";
+  state.teams.forEach((t) => {
+    const o = el("option", "", t.name + " · " + fmtPct0(t.title_prob));
+    o.value = t.id;
+    sel.appendChild(o);
+  });
+  sel.addEventListener("change", () => select(sel.value));
+}
+
 const inputValue = (key) => (team) => {
   const input = team.inputs && team.inputs[key];
   return input && typeof input.value === "number" ? input.value : null;
@@ -831,6 +900,8 @@ function renderTeam() {
   $("team-crest").appendChild(crest(team, 120));
   updateBig($("team-big"), team.title_prob, state.page === PAGES.indexOf("team") ? false : true);
   $("team-name").textContent = team.name;
+  if ($("team-select").value !== team.id) $("team-select").value = team.id;
+  renderStars(team);
   const bits = [team.conference, team.record, team.status === "eliminated" ? "Eliminated" : team.status === "champion" ? "Champion" : "Rank " + team.rank];
   $("team-sub").textContent = bits.filter(Boolean).join(" · ");
 
@@ -1008,6 +1079,8 @@ function buildModel() {
     });
   }
 
+  renderModelExtra();
+
   const d = new Date(state.data.generated_at);
   const parts = [];
   if (!Number.isNaN(d.getTime())) parts.push("Updated " + d.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }));
@@ -1015,6 +1088,39 @@ function buildModel() {
   if (state.data.sim && state.data.sim.runs) parts.push(state.data.sim.runs.toLocaleString() + " simulations");
   if (state.data.phase) parts.push("Phase: " + String(state.data.phase).replace("_", " "));
   $("model-fine").textContent = parts.join(" · ");
+}
+
+// The market blend and the injury input, explained under the weights. Both blocks are optional in odds.json.
+function renderModelExtra() {
+  const box = $("model-extra");
+  box.textContent = "";
+  const mk = state.data.market;
+  const rows = el("div", "rows");
+  rows.setAttribute("role", "group");
+  rows.setAttribute("aria-label", "Market blend");
+  if (mk && typeof mk === "object") {
+    const used = mk.used === true && typeof mk.weight === "number";
+    const name = String(mk.source || "market").replace(/^./, (c) => c.toUpperCase());
+    rows.appendChild(row("Market blend · " + name, used ? Math.round(mk.weight * 100) + "%" : "Not used today", { cls: "static" }));
+    const bits = [];
+    if (used) bits.push("Title odds are " + Math.round((1 - mk.weight) * 100) + "% model and " + Math.round(mk.weight * 100) + "% " + name + ".");
+    else bits.push("Today the odds are 100% model." + (mk.reason ? " Reason: " + mk.reason + "." : ""));
+    const f = mk.fetched_at ? new Date(mk.fetched_at) : null;
+    if (f && !Number.isNaN(f.getTime())) bits.push("Market read " + f.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) + ".");
+    box.appendChild(rows);
+    box.appendChild(el("p", "model-note", bits.join(" ")));
+  }
+  if (mk && typeof mk === "object") {
+    const pct = typeof mk.weight === "number" && mk.weight > 0 ? Math.round(mk.weight * 100) + "%" : "a small share";
+    box.appendChild(el("p", "model-note", "Why mix in a market? Its prices come from traders putting real money behind their views, " +
+      "so they pick up news and context a stats model can miss. The weight is kept small (" + pct + ") so the model stays independent and does the real work."));
+  }
+  const hasHealth = state.teams.some((t) => typeof t.health_adjustment === "number" || (Array.isArray(t.injuries) && t.injuries.length));
+  if (hasHealth) {
+    box.appendChild(el("p", "model-note", "Injuries: for each hurt player the model reads the expected return date and asks whether he will be healthy for the playoffs, " +
+      "because that is when the title is decided. Dates the report does not give are estimated, and estimated returns count for less. " +
+      "A star who is out now but back by April barely changes a team's odds; one who misses the playoffs changes them a lot."));
+  }
 }
 
 // ---------- Header, status ----------
@@ -1201,6 +1307,7 @@ async function init() {
   buildBubbles();
   buildRankList();
   if ($("page-standings")) buildStandings();
+  buildTeamSelect();
   buildMap();
   buildModel();
   setupBig($("home-big"));

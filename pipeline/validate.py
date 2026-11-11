@@ -58,6 +58,7 @@ def validate_odds(odds: dict) -> list[str]:
     problems += _check_market(odds)
     problems += _check_playoff_mode(odds)
     problems += _check_health(odds)
+    problems += _check_stars(odds)
     problems += _check_standings(odds)
     problems += _check_leaders(odds)
 
@@ -159,6 +160,30 @@ def _check_health(odds: dict) -> list[str]:
             if not ok:
                 problems.append(f"{tid} has a malformed injuries entry")
                 break
+    return problems
+
+
+def _check_stars(odds: dict) -> list[str]:
+    """Checks for the optional per-team `stars` list (SPEC.md section 7): up to 2 of {name, bpm, mpg?, ppg?, status?,
+    expected_return?}. Runs only when present."""
+    problems: list[str] = []
+    for team in odds["teams"]:
+        if "stars" not in team:
+            continue
+        stars = team["stars"]
+        ok = isinstance(stars, list) and len(stars) <= 2
+        for s in stars if ok else []:
+            ok = ok and isinstance(s, dict) and isinstance(s.get("name"), str) and _is_number(s.get("bpm"))
+            ok = ok and all(_is_number(s[k]) for k in ("mpg", "ppg") if k in s)
+            ok = ok and ("status" not in s or isinstance(s["status"], str))
+            back = s.get("expected_return") if isinstance(s, dict) else None
+            if back is not None:
+                try:
+                    datetime.strptime(back, "%Y-%m-%d")
+                except (TypeError, ValueError):
+                    ok = False
+        if not ok:
+            problems.append(f"{team.get('id')} has a malformed stars list")
     return problems
 
 

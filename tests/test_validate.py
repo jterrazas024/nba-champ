@@ -80,3 +80,17 @@ def test_playoff_mode_fields_are_checked_when_present():
     assert any("phase must be" in p for p in validate_odds(bad))
     bad = _playoff_file(); del bad["teams"][5]["status"]
     assert any("no status" in p for p in validate_odds(bad))
+
+
+def test_stars_field_is_optional_and_checked_when_present():
+    odds = json.loads(REAL_FILE.read_text())
+    assert validate_odds(odds) == []
+    odds["teams"][0]["stars"] = [{"name": "A B", "bpm": 5.1, "mpg": 33.0, "ppg": 24.5},
+                                 {"name": "C D", "bpm": 3.0, "status": "Out", "expected_return": "2027-01-17"}]
+    assert validate_odds(odds) == []
+    odds["teams"][0]["stars"][0]["bpm"] = "high"
+    assert any("stars" in p for p in validate_odds(odds))
+    odds["teams"][0]["stars"] = [{"name": "A", "bpm": 1}] * 3
+    assert any("stars" in p for p in validate_odds(odds))
+    odds["teams"][0]["stars"] = [{"name": "A", "bpm": 1, "expected_return": "soon"}]
+    assert any("stars" in p for p in validate_odds(odds))
