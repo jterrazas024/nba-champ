@@ -143,7 +143,7 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
   flex: 0 0 100%;
   min-width: 0;
   height: 100%;
-  padding: 0 22px 18px;
+  padding: 0 22px 28px;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -212,11 +212,13 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
 
 /* ---------- Home art: the floating ball ---------- */
 
-.art-home { flex: none; height: 30cqh; display: grid; place-items: center; margin-top: 1cqh; }
-.ball-svg { height: 100%; width: auto; overflow: visible; }
+.art-home { flex: none; height: 30cqh; display: grid; place-items: center; margin-top: 1cqh; margin-bottom: 1.5cqh; }
+.ball-svg { height: 100%; width: auto; overflow: visible; pointer-events: none; }
+.ball-hit { pointer-events: all; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.ball-hit.grab { cursor: grabbing; }
 .ball-float { animation: float 6s ease-in-out infinite; transform-origin: 150px 150px; }
 .ball-spin { animation: sway 14s ease-in-out infinite; transform-origin: 150px 150px; }
-.shadow-ell { animation: shadow 6s ease-in-out infinite; transform-origin: 150px 280px; }
+.shadow-ell { animation: shadow 6s ease-in-out infinite; transform-origin: 150px 270px; }
 .fleck { animation: drift 7s ease-in-out infinite; }
 .fleck:nth-child(2n) { animation-duration: 9s; animation-direction: reverse; }
 .fleck:nth-child(3n) { animation-delay: -3s; }
@@ -441,8 +443,8 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
     column-gap: clamp(32px, 4vw, 64px); justify-content: start; align-content: start; padding-top: clamp(8px, 3vh, 36px);
   }
   .art-home { grid-column: 1; height: min(37vh, 380px); margin-top: 0; }
-  .ball-svg { height: min(44vh, 450px); }
-  #home-big { grid-column: 1; margin-top: min(1.5vh, 12px); }
+  .ball-svg { height: min(44vh, 450px); transform: translate(-18px, 16px); } /* ball, shadow and flecks sit centered over the digits + % block */
+  #home-big { grid-column: 1; margin-top: calc(min(1.5vh, 12px) - min(3.5vh, 30px) + min(1.2vh, 10px)); }
   #page-home .caption { grid-column: 1; }
   .contenders { grid-column: 2; grid-row: 1 / span 3; align-self: start; margin: min(2vh, 20px) 0 0; }
   .cont-head { justify-content: space-between; padding: 0 0 10px 6px; }
@@ -478,7 +480,7 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; borde
   #rank-list::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 50%, transparent); border-radius: 3px; }
 
   /* 3. Team: identity and number on the left, measures and charts on the right */
-  #page-team { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-content: center; }
+  #page-team { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-content: safe center; }
   #page-team .row { min-height: 42px; font-size: 14px; }
   #page-team > .team-head, #page-team > .page-title, #page-team > .page-sub, #page-team > .notes { grid-column: 1; }
   .team-head { justify-content: flex-start; gap: clamp(20px, 3vw, 44px); padding: 0; margin-top: 0; }
