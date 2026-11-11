@@ -1060,6 +1060,7 @@ function buildModel() {
   const rows = $("model-rows");
   rows.textContent = "";
   weights.forEach((x, i) => rows.appendChild(row(WEIGHT_LABELS[x.key] || x.key, Math.round(x.w * 100) + "%", { cls: "static" + (i === 0 ? " sel" : "") })));
+  appendMarketRow(rows);
 
   // Pucks: one floating disc per input, as wide as its weight. Lit top, shaded side, thickness below.
   const box = $("slabs");
@@ -1079,8 +1080,6 @@ function buildModel() {
     });
   }
 
-  renderModelExtra();
-
   const d = new Date(state.data.generated_at);
   const parts = [];
   if (!Number.isNaN(d.getTime())) parts.push("Updated " + d.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }));
@@ -1090,18 +1089,12 @@ function buildModel() {
   $("model-fine").textContent = parts.join(" · ");
 }
 
-// The prediction-market share, shown as one more row under the weights. The block is optional in odds.json.
-function renderModelExtra() {
-  const box = $("model-extra");
-  box.textContent = "";
+// The prediction-market share, shown as the last row of the weights list. The block is optional in odds.json.
+function appendMarketRow(rows) {
   const mk = state.data.market;
   if (!mk || typeof mk !== "object") return;
   const used = mk.used === true && typeof mk.weight === "number";
-  const rows = el("div", "rows");
-  rows.setAttribute("role", "group");
-  rows.setAttribute("aria-label", "Prediction market");
   rows.appendChild(row("Prediction market", used ? Math.round(mk.weight * 100) + "%" : "Not used today", { cls: "static" }));
-  box.appendChild(rows);
 }
 
 // ---------- Header, status ----------
