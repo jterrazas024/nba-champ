@@ -205,16 +205,28 @@ function buildBall() {
   const clip = svgEl("clipPath", { id: "ballclip" }, defs);
   svgEl("circle", { cx: 150, cy: 150, r: 100 }, clip);
 
-  svgEl("ellipse", { class: "shadow-ell", cx: 150, cy: 284, rx: 74, ry: 9, style: "fill:var(--sph-shadow)", filter: "url(#speck)" }, svg);
+  // Everything sits in one group nudged up so the shadow stays clear of the big number below.
+  const scene = svgEl("g", { transform: "translate(0 -44)" }, svg);
+  svgEl("ellipse", { class: "shadow-ell", cx: 150, cy: 272, rx: 74, ry: 9, style: "fill:var(--sph-shadow)", filter: "url(#speck)" }, scene);
 
-  const float = svgEl("g", { class: "ball-float" }, svg);
+  const float = svgEl("g", { class: "ball-float" }, scene);
   const spin = svgEl("g", { class: "ball-spin" }, float);
+  let turn = null;
+  const seams = []; // each seam: 3D points on the unit sphere plus its two stroke paths
   sphere(spin, 150, 150, 100, (g) => {
-    // Seams in the team color, curved a little so they wrap around the sphere.
-    const seams = svgEl("g", { "clip-path": "url(#ballclip)", fill: "none", "stroke-linecap": "round" }, g);
-    ["M150 40 Q156 150 150 260", "M40 150 Q150 192 260 150", "M80 66 Q132 156 84 236", "M220 66 Q176 156 214 236"].forEach((d) => {
-      svgEl("path", { d: d, style: "stroke:var(--sph-lo)", "stroke-width": 11, opacity: 0.8 }, seams);
-      svgEl("path", { d: d, style: "stroke:var(--team)", "stroke-width": 6 }, seams);
+    // Seams are 3D curves on a unit sphere, projected each frame so a drag really turns the ball.
+    const clipped = svgEl("g", { "clip-path": "url(#ballclip)", fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" }, g);
+    turn = svgEl("g", { class: "ball-turn" }, clipped);
+    const ring = (fn) => { const pts = []; for (let i = 0; i <= 48; i++) pts.push(fn(i / 48 * Math.PI * 2)); return pts; };
+    const side = 0.56, rs = Math.sqrt(1 - side * side);
+    [ring((t) => [Math.cos(t), 0, Math.sin(t)]),            // equator
+     ring((t) => [0, Math.cos(t), Math.sin(t)]),            // meridian
+     ring((t) => [side, rs * Math.cos(t), rs * Math.sin(t)]),   // side curve, right
+     ring((t) => [-side, rs * Math.cos(t), rs * Math.sin(t)])  // side curve, left
+    ].forEach((pts) => {
+      const lo = svgEl("path", { d: "", style: "stroke:var(--sph-lo)", "stroke-width": 11, opacity: 0.8 }, turn);
+      const hi = svgEl("path", { d: "", style: "stroke:var(--team)", "stroke-width": 6 }, turn);
+      seams.push({ pts: pts, lo: lo, hi: hi });
     });
   });
   svgEl("circle", { cx: 150, cy: 150, r: 98.5, fill: "none", style: "stroke:var(--team)", "stroke-width": 2, opacity: 0.55 }, spin);
@@ -222,9 +234,94 @@ function buildBall() {
   // Flecks: small slivers drifting around the ball.
   [[44, 96, -30, 16, 4, 0], [262, 78, 24, 18, 4, 1], [28, 190, 18, 12, 3, 1], [272, 170, -40, 14, 3, 0],
    [64, 40, 40, 10, 3, 1], [238, 238, -20, 12, 3, 0]].forEach((f) => {
-    const g = svgEl("g", { transform: "translate(" + f[0] + " " + f[1] + ") rotate(" + f[2] + ")" }, svg);
+    const g = svgEl("g", { transform: "translate(" + f[0] + " " + f[1] + ") rotate(" + f[2] + ")" }, scene);
     svgEl("ellipse", { class: "fleck", cx: 0, cy: 0, rx: f[3], ry: f[4], style: "fill:" + (f[5] ? "var(--team)" : "var(--ink)") }, g);
   });
+
+  const hit = svgEl("circle", { class: "ball-hit", cx: 150, cy: 150, r: 100, fill: "transparent" }, float);
+
+  // Orientation is a 3x3 rotation matrix (x right, y down, z toward the viewer). Dragging turns the surface
+  // under the pointer (right = about the vertical axis, up/down = about the horizontal axis), then it coasts.
+  let m = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+  const mul = (r, q) => [
+    r[0] * q[0] + r[1] * q[3] + r[2] * q[6], r[0] * q[1] + r[1] * q[4] + r[2] * q[7], r[0] * q[2] + r[1] * q[5] + r[2] * q[8],
+    r[3] * q[0] + r[4] * q[3] + r[5] * q[6], r[3] * q[1] + r[4] * q[4] + r[5] * q[7], r[3] * q[2] + r[4] * q[5] + r[5] * q[8],
+    r[6] * q[0] + r[7] * q[3] + r[8] * q[6], r[6] * q[1] + r[7] * q[4] + r[8] * q[7], r[6] * q[2] + r[7] * q[5] + r[8] * q[8]];
+  const rotY = (t) => [Math.cos(t), 0, Math.sin(t), 0, 1, 0, -Math.sin(t), 0, Math.cos(t)];
+  const rotX = (t) => [1, 0, 0, 0, Math.cos(t), -Math.sin(t), 0, Math.sin(t), Math.cos(t)];
+  const turnBy = (ay, ax) => { m = mul(rotX(ax), mul(rotY(ay), m)); };
+  const normalize = () => { // keep the matrix a true rotation despite rounding drift
+    const n = (i) => { const l = Math.hypot(m[i], m[i + 1], m[i + 2]) || 1; m[i] /= l; m[i + 1] /= l; m[i + 2] /= l; };
+    n(0); n(3);
+    m[6] = m[1] * m[5] - m[2] * m[4]; m[7] = m[2] * m[3] - m[0] * m[5]; m[8] = m[0] * m[4] - m[1] * m[3];
+  };
+  const paint = () => {
+    seams.forEach((sm) => {
+      let d = "", pen = false;
+      sm.pts.forEach((p) => {
+        const z = m[6] * p[0] + m[7] * p[1] + m[8] * p[2];
+        if (z <= 0) { pen = false; return; } // back hemisphere is hidden
+        const x = 150 + 100 * (m[0] * p[0] + m[1] * p[1] + m[2] * p[2]);
+        const y = 150 + 100 * (m[3] * p[0] + m[4] * p[1] + m[5] * p[2]);
+        d += (pen ? "L" : "M") + x.toFixed(1) + " " + y.toFixed(1);
+        pen = true;
+      });
+      sm.lo.setAttribute("d", d);
+      sm.hi.setAttribute("d", d);
+    });
+  };
+  turnBy(0.5, -0.35); // a pleasing resting pose
+  paint();
+
+  let vx = 0, vy = 0, raf = 0, last = 0, drag = null;
+  const coast = (now) => {
+    const dt = Math.max(0, Math.min(40, now - last)); // a frame stamp can precede performance.now()
+    last = now;
+    turnBy(vx * dt, vy * dt);
+    normalize();
+    const f = Math.exp(-dt / 450); // friction: speed falls by about 63% every 450 ms
+    vx *= f; vy *= f;
+    paint();
+    raf = Math.hypot(vx, vy) > 0.00008 ? requestAnimationFrame(coast) : 0;
+  };
+  const radiusPx = () => hit.getBoundingClientRect().width / 2 || 1;
+  hit.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.stopPropagation(); // keep the page pager from treating this as a swipe
+    cancelAnimationFrame(raf);
+    raf = 0;
+    vx = vy = 0;
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, t: performance.now() };
+    try { hit.setPointerCapture(e.pointerId); } catch (err) { /* capture is optional */ }
+    hit.classList.add("grab");
+  });
+  hit.addEventListener("pointermove", (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (e.pointerType === "mouse" && !(e.buttons & 1)) { release(e); return; } // button no longer down
+    const now = performance.now();
+    const k = 1 / radiusPx(); // radians per pixel: the surface follows the pointer
+    const ay = (e.clientX - drag.x) * k, ax = -(e.clientY - drag.y) * k;
+    turnBy(ay, ax);
+    normalize();
+    const dt = Math.max(1, now - drag.t);
+    vx = vx * 0.6 + (ay / dt) * 0.4;
+    vy = vy * 0.6 + (ax / dt) * 0.4;
+    drag.x = e.clientX; drag.y = e.clientY; drag.t = now;
+    paint();
+  });
+  function release(e) {
+    if (!drag || (e && e.pointerId !== undefined && e.pointerId !== drag.id)) return;
+    const idle = performance.now() - drag.t; // held still before letting go: no coasting
+    try { hit.releasePointerCapture(drag.id); } catch (err) { /* already released */ }
+    drag = null;
+    hit.classList.remove("grab");
+    if (REDUCED || idle > 90 || Math.hypot(vx, vy) < 0.0001) { vx = vy = 0; return; }
+    last = performance.now();
+    raf = requestAnimationFrame(coast);
+  }
+  hit.addEventListener("pointerup", release);
+  hit.addEventListener("pointercancel", release);
+  hit.addEventListener("lostpointercapture", release);
 }
 
 function renderHomeText() {
